@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cenosled – porovnání cen s konkurencí pro e-shopy</title>
+<meta name="description" content="Pošlete adresu svého e-shopu a jednoho konkurenta. Zdarma dostanete tabulku stejných produktů s rozdílem cen.">
+<style>
+  :root {
+    --paper: #eef2f3;
+    --sheet: #ffffff;
+    --ink: #13262d;
+    --muted: #55686f;
+    --line: #cfd9dc;
+    --petrol: #0e5a6b;
+    --marker: #ffd84a;
+    --pricier: #b4321f;
+    --cheaper: #1b7449;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.55 var(--font); }
+  a { color: var(--petrol); }
+  :focus-visible { outline: 3px solid var(--petrol); outline-offset: 2px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+  header.top { padding: 22px 0; }
+  .brand { font-weight: 800; font-size: 21px; letter-spacing: -0.02em; text-decoration: none; color: var(--ink); }
+  .brand span { background: var(--marker); padding: 0 6px; }
+
+  .hero { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 48px; align-items: start; padding-top: 28px; padding-bottom: 72px; }
+  h1 { font-size: clamp(34px, 5.2vw, 58px); line-height: 1.04; letter-spacing: -0.035em; font-weight: 800; margin: 0 0 20px; }
+  .lead { font-size: 19px; color: var(--muted); margin: 0 0 28px; max-width: 34em; }
+
+  form { background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 22px; }
+  label { display: block; font-weight: 600; font-size: 15px; margin: 0 0 6px; }
+  .field { margin-bottom: 16px; }
+  input[type=url], input[type=email], input[type=text] {
+    width: 100%; font: inherit; color: var(--ink); background: var(--sheet);
+    border: 1.5px solid #9fb0b5; border-radius: 4px; padding: 11px 12px;
+  }
+  input::placeholder { color: #8a9a9f; }
+  .hp { position: absolute; left: -9999px; }
+  button {
+    font: inherit; font-weight: 700; color: var(--ink); background: var(--marker);
+    border: 1.5px solid var(--ink); border-radius: 4px; padding: 12px 20px; cursor: pointer; width: 100%;
+  }
+  button:hover { background: #ffcf1f; }
+  button[disabled] { opacity: .6; cursor: default; }
+  .small { font-size: 14px; color: var(--muted); margin: 12px 0 0; }
+  .msg { margin: 14px 0 0; font-weight: 600; }
+  .msg.ok { color: var(--cheaper); }
+  .msg.err { color: var(--pricier); }
+
+  /* Ukázková tabulka = hlavní obraz stránky */
+  .sample { background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .sample-head { display: flex; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+  .sample-head strong { color: var(--ink); }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 11px 18px; text-align: right; white-space: nowrap; border-bottom: 1px solid #e3eaec; }
+  th { font-weight: 600; font-size: 13px; color: var(--muted); background: #f6f9fa; }
+  th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 190px; }
+  tr:last-child td { border-bottom: 0; }
+  tr.hot td:first-child { box-shadow: inset 4px 0 0 var(--marker); }
+  .up { color: var(--pricier); font-weight: 700; }
+  .down { color: var(--cheaper); font-weight: 700; }
+  .same { color: var(--muted); }
+  .sample-foot { padding: 12px 18px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); background: #f6f9fa; }
+
+  section { padding: 64px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.12; letter-spacing: -0.025em; font-weight: 800; margin: 0 0 28px; max-width: 20em; }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; counter-reset: s; }
+  .steps li { counter-increment: s; }
+  .steps li::before { content: counter(s); display: block; font-size: 44px; font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: var(--petrol); margin-bottom: 10px; }
+  .steps h3, .fit h3 { font-size: 19px; margin: 0 0 6px; }
+  .steps p, .fit p { margin: 0; color: var(--muted); }
+  .fit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 48px; }
+
+  .plans { width: 100%; background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; }
+  .plans th, .plans td { text-align: left; white-space: normal; }
+  .plans td:last-child, .plans th:last-child { text-align: right; white-space: nowrap; }
+  .plans td:first-child { font-weight: 700; min-width: 110px; }
+
+  dl { margin: 0; max-width: 46em; }
+  dt { font-weight: 700; margin-top: 22px; }
+  dt:first-child { margin-top: 0; }
+  dd { margin: 4px 0 0; color: var(--muted); }
+
+  .again { background: var(--ink); color: #fff; border-top: 0; }
+  .again h2 { color: #fff; margin-bottom: 14px; }
+  .again p { color: #c3d0d4; margin: 0 0 22px; max-width: 34em; }
+  .again a.btn { display: inline-block; background: var(--marker); color: var(--ink); font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 4px; }
+
+  footer { padding: 28px 0 40px; font-size: 14px; color: var(--muted); }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-bottom: 48px; }
+    .steps, .fit { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+    section { padding: 44px 0; }
+    table { font-size: 14px; }
+    th, td { padding: 10px 8px; }
+    th:first-child, td:first-child { min-width: 0; padding-left: 12px; }
+    th:last-child, td:last-child { padding-right: 12px; }
+    .plans td:first-child { min-width: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap"><a class="brand" href="#"><span>Ceno</span>sled</a></div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <h1>Kde jste dražší než konkurence</h1>
+      <p class="lead">Pošlete adresu svého e-shopu a jednoho konkurenta. Do tří pracovních dnů vám zdarma pošleme tabulku stejných produktů s cenami obou obchodů vedle sebe.</p>
+
+      <form id="poptavka" novalidate>
+        <div class="field">
+          <label for="shop">Váš e-shop</label>
+          <input id="shop" name="shop" type="url" inputmode="url" placeholder="https://vas-eshop.cz" required>
+        </div>
+        <div class="field">
+          <label for="rival">Konkurent, se kterým se chcete porovnat</label>
+          <input id="rival" name="rival" type="url" inputmode="url" placeholder="https://konkurent.cz" required>
+        </div>
+        <div class="field">
+          <label for="email">E-mail, kam tabulku pošleme</label>
+          <input id="email" name="email" type="email" placeholder="vy@vas-eshop.cz" required>
+        </div>
+        <div class="hp" aria-hidden="true">
+          <label for="web">Toto pole nevyplňujte</label>
+          <input id="web" name="web" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <button type="submit">Poslat k porovnání</button>
+        <p class="msg" id="msg" role="status" hidden></p>
+        <p class="small">Údaje použijeme jen k přípravě porovnání a k odpovědi. Nikomu je nepředáváme.</p>
+      </form>
+    </div>
+
+    <div class="sample" aria-label="Ukázka porovnání">
+      <div class="sample-head"><strong>Ukázka tabulky, kterou dostanete</strong><span>smyšlená data</span></div>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr><th>Produkt</th><th>Vy</th><th>Konkurent</th><th>Rozdíl</th></tr>
+          </thead>
+          <tbody>
+            <tr class="hot"><td>Mlýnek na kávu Tero M2</td><td>3 092 Kč</td><td>2 899 Kč</td><td class="up">+6,7 %</td></tr>
+            <tr class="hot"><td>Konvice s teploměrem Vira 0,9 l</td><td>2 945 Kč</td><td>2 799 Kč</td><td class="up">+5,2 %</td></tr>
+            <tr class="hot"><td>Dripper keramický Olla 02</td><td>563 Kč</td><td>559 Kč</td><td class="up">+0,7 %</td></tr>
+            <tr><td>Váha s časovačem Brio</td><td>989 Kč</td><td>989 Kč</td><td class="same">stejně</td></tr>
+            <tr><td>Filtry papírové Olla 02, 100 ks</td><td>199 Kč</td><td>199 Kč</td><td class="same">stejně</td></tr>
+            <tr><td>Pákový kávovar Lumo Duo</td><td>6 625 Kč</td><td>6 890 Kč</td><td class="down">−3,8 %</td></tr>
+            <tr><td>Odklepávač na sedlinu Tamp</td><td>7 774 Kč</td><td>8 190 Kč</td><td class="down">−5,1 %</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sample-foot">Žlutě označené řádky: tady prodáváte dráž než konkurent.</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <h2>Jak to probíhá</h2>
+      <ol class="steps">
+        <li><h3>Pošlete dvě adresy</h3><p>Váš e-shop a jeden konkurent. Nic neinstalujete a nepotřebujeme přístup do administrace.</p></li>
+        <li><h3>Najdeme stejné produkty</h3><p>Projdeme veřejné stránky obou obchodů a spárujeme zboží podle názvu a EAN. Nejisté páry označíme.</p></li>
+        <li><h3>Dostanete tabulku</h3><p>E-mailem přijde přehled: produkt, vaše cena, cena konkurenta a rozdíl v procentech.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Komu se to hodí</h2>
+      <div class="fit">
+        <div><h3>Konkurent není na Heurece</h3><p>Srovnávače vidí jen obchody, které na nich inzerují. My čteme ceny přímo z webu konkurenta.</p></div>
+        <div><h3>Prodáváte úzký sortiment</h3><p>Náhradní díly, hobby, speciální vybavení. Zboží, které srovnávače párují špatně nebo vůbec.</p></div>
+        <div><h3>Ceny dnes kontrolujete ručně</h3><p>Místo proklikávání konkurence otevřete jednu tabulku.</p></div>
+        <div><h3>Nechcete nastavovat velký nástroj</h3><p>Žádné feedy ani napojení. Stačí adresa e-shopu.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Když se vám tabulka osvědčí, může chodit každý den</h2>
+      <div class="scroll">
+        <table class="plans">
+          <thead><tr><th>Tarif</th><th>Co obsahuje</th><th>Cena za měsíc</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td>1 konkurent, do 200 produktů, přehled jednou denně</td><td>490 Kč</td></tr>
+            <tr><td>Standard</td><td>3 konkurenti, do 1&nbsp;000 produktů, přehled jednou denně</td><td>990 Kč</td></tr>
+            <tr><td>Plus</td><td>5 konkurentů, do 3&nbsp;000 produktů, upozornění při změně ceny</td><td>1 990 Kč</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small">První porovnání je zdarma a k ničemu vás nezavazuje. Ceny jsou konečné, nejsme plátci DPH.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Časté otázky</h2>
+      <dl>
+        <dt>Odkud ceny berete?</dt>
+        <dd>Z veřejných stránek e-shopů, stejně jako je vidí zákazník.</dd>
+        <dt>Co když konkurent pojmenovává produkty jinak?</dt>
+        <dd>Párujeme podle názvu, modelu a EAN. Páry, u kterých si nejsme jistí, v tabulce označíme a můžete je potvrdit nebo vyřadit.</dd>
+        <dt>Funguje to pro každý e-shop?</dt>
+        <dd>Nejspolehlivěji zatím pro obchody na Shoptetu. U ostatních to zkusíme a dáme vám vědět, jestli se ceny podařilo načíst.</dd>
+        <dt>Dozví se o tom konkurent?</dt>
+        <dd>Ne. Čteme jen veřejné stránky a vaše údaje nikomu nepředáváme.</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="again">
+    <div class="wrap">
+      <h2>Zjistěte to na vlastním sortimentu</h2>
+      <p>Jedno porovnání s jedním konkurentem je zdarma.</p>
+      <a class="btn" href="#poptavka">Vyplnit dvě adresy</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    Provozovatel: Oleksii Bilan, IČO 19670168.
+  </div>
+</footer>
+
+<script>
+  // Adresa webové aplikace Apps Script (soubor formular.gs). Bez ní formulář nic neodešle.
+  var FORM_URL = 'https://script.google.com/macros/s/AKfycby57zoyMvw2G3ek93xlcy3R564I6ci20y_-QnTSuyKs-fOQ2p66LE71HhUp29PXOmsUxg/exec';
+
+  var form = document.getElementById('poptavka');
+  var msg = document.getElementById('msg');
+  function show(text, cls) { msg.textContent = text; msg.className = 'msg ' + cls; msg.hidden = false; }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var d = new FormData(form);
+    var urlOk = function (v) { return /^https?:\/\/[^\s.]+\.[^\s]+$/i.test(String(v).trim()); };
+    if (!urlOk(d.get('shop')) || !urlOk(d.get('rival'))) { show('Zadejte obě adresy včetně https://', 'err'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(d.get('email')).trim())) { show('Zadejte e-mail, na který máme tabulku poslat.', 'err'); return; }
+    if (FORM_URL.indexOf('http') !== 0) { show('Formulář zatím není připojený. Doplňte adresu FORM_URL.', 'err'); return; }
+
+    var btn = form.querySelector('button');
+    btn.disabled = true;
+    fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(d) })
+      .then(function () {
+        show('Odesláno. Tabulku pošleme na ' + String(d.get('email')).trim() + ' do tří pracovních dnů.', 'ok');
+        form.reset();
+      })
+      .catch(function () { show('Odeslání se nepovedlo. Zkontrolujte připojení a pošlete formulář znovu.', 'err'); })
+      .then(function () { btn.disabled = false; });
+  });
+</script>
+</body>
+</html>
