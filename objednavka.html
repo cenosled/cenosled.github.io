@@ -77,6 +77,19 @@
   .msg.err { color: var(--pricier); }
   .small { font-size: 14px; color: var(--muted); margin: 12px 0 0; }
   footer { padding: 0 0 40px; font-size: 14px; color: var(--muted); }
+  footer a { color: var(--muted); }
+  footer .links { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .linkbtn { font: inherit; color: var(--muted); background: none; border: 0; padding: 0; width: auto; text-decoration: underline; cursor: pointer; }
+  .linkbtn:hover { background: none; color: var(--ink); }
+
+  .cc { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 50; max-width: 560px; margin: 0 auto;
+        background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px;
+        box-shadow: 0 10px 30px rgba(11,31,58,.18); font-size: 15px; }
+  .cc p { margin: 0 0 14px; color: var(--muted); }
+  .cc .row { display: flex; gap: 10px; }
+  .cc button { width: auto; flex: 1; padding: 10px 14px; }
+  .cc button.alt { background: var(--sheet); color: var(--ink); border-color: var(--ink); }
+  .cc button.alt:hover { background: #eef2f8; }
 
   @media (max-width: 640px) {
     form { padding: 20px; }
@@ -160,12 +173,84 @@
 </main>
 
 <footer>
-  <div class="wrap">Provozovatel: Oleksii Bilan, IČO 19670168, se sídlem Nad sokolovnou 125/9, 147 00 Praha 4, zapsaný v živnostenském rejstříku.</div>
+  <div class="wrap">Provozovatel: Oleksii Bilan, IČO 19670168, se sídlem Nad sokolovnou 125/9, 147 00 Praha 4, zapsaný v živnostenském rejstříku.
+    <div class="links">
+      <a href="/zasady.html">Zásady ochrany osobních údajů a cookies</a>
+      <button type="button" class="linkbtn" id="cc-open">Nastavení cookies</button>
+    </div>
+  </div>
 </footer>
+
+<div class="cc" id="cc" role="dialog" aria-label="Souhlas s cookies" hidden>
+  <p>Rádi bychom měřili, kolik lidí přišlo z reklamy a vyplnilo formulář. K tomu potřebujeme cookies Googlu. Bez souhlasu stránka funguje stejně. <a href="/zasady.html#cookies">Podrobnosti</a></p>
+  <div class="row">
+    <button type="button" class="alt" id="cc-no">Jen nezbytné</button>
+    <button type="button" id="cc-yes">Povolit měření</button>
+  </div>
+</div>
 
 <script>
   // Stejná webová aplikace Apps Script jako formulář na úvodní stránce (Code.gs → doPost → objednavka_ v predplatne.gs).
   var FORM_URL = 'https://script.google.com/macros/s/AKfycby4a4ALh7AqBFnCcfLkZeU4y-4S3ntWTatzGE4iLS8XmAVWLdCbH-mnXisS7jOHGuTh/exec';
+
+  // Google Ads: stejný účet jako na úvodní stránce, konverze „Objednávka tarifu“.
+  var ADS_ID = 'AW-18570152011';
+  var ADS_LABEL = 'vw6DCPjY1rYdEMuQ-JZF';
+  var GA4_ID = '';
+  var TARIF_CENA = { Start: 490, Standard: 990, Plus: 1990 };
+
+  // ---------- zdroj návštěvy (gclid, utm) — stejný klíč cs_src jako na úvodní stránce ----------
+  var SRC_KEYS = ['gclid', 'gbraid', 'wbraid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term'];
+  (function () {
+    var q = new URLSearchParams(location.search), got = {};
+    SRC_KEYS.forEach(function (k) { if (q.get(k)) got[k] = q.get(k); });
+    if (Object.keys(got).length) { try { sessionStorage.setItem('cs_src', JSON.stringify(got)); } catch (e) {} }
+  })();
+  function source() {
+    try { return sessionStorage.getItem('cs_src') || ''; } catch (e) { return ''; }
+  }
+
+  // ---------- souhlas s cookies + Google tag (tag se načte až po souhlasu) ----------
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  var tagLoaded = false;
+  function consent() { try { return localStorage.getItem('cs_consent'); } catch (e) { return null; } }
+  function loadTag() {
+    var first = ADS_ID || GA4_ID;
+    if (tagLoaded || !first) return;
+    tagLoaded = true;
+    gtag('consent', 'default', { ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'denied', analytics_storage: 'granted' });
+    var sc = document.createElement('script');
+    sc.async = true; sc.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(first);
+    document.head.appendChild(sc);
+    gtag('js', new Date());
+    if (ADS_ID) gtag('config', ADS_ID);
+    if (GA4_ID) gtag('config', GA4_ID);
+  }
+  var cc = document.getElementById('cc');
+  function setConsent(v) {
+    try { localStorage.setItem('cs_consent', v); } catch (e) {}
+    cc.hidden = true;
+    if (v === 'yes') loadTag();
+    else if (tagLoaded) location.reload();
+  }
+  document.getElementById('cc-yes').addEventListener('click', function () { setConsent('yes'); });
+  document.getElementById('cc-no').addEventListener('click', function () { setConsent('no'); });
+  document.getElementById('cc-open').addEventListener('click', function () { cc.hidden = false; });
+  if (ADS_ID || GA4_ID) {
+    if (consent() === 'yes') loadTag();
+    else if (consent() !== 'no') cc.hidden = false;
+  }
+  function orderId() {
+    try { if (window.crypto && crypto.randomUUID) return 'obj-' + crypto.randomUUID(); } catch (e) {}
+    return 'obj-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+  }
+  function trackOrder(tarif, txId) {
+    if (!tagLoaded) return;
+    var value = TARIF_CENA[tarif] || 990;
+    if (ADS_ID && ADS_LABEL) gtag('event', 'conversion', { send_to: ADS_ID + '/' + ADS_LABEL, value: value, currency: 'CZK', transaction_id: txId });
+    if (GA4_ID) gtag('event', 'purchase', { value: value, currency: 'CZK', transaction_id: txId });
+  }
 
   var form = document.getElementById('objednavka');
   var msg = document.getElementById('msg');
@@ -229,11 +314,16 @@
     d.set('shop', shop);
     d.set('rivals', rivals.join('\n'));
     d.set('ico', ico);
+    var tarif = String(d.get('tarif') || '');
+    var txId = orderId();
+    d.set('order_id', txId);
+    d.set('src', source());
 
     var btn = form.querySelector('button[type=submit]');
     btn.disabled = true;
     fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(d) })
       .then(function () {
+        trackOrder(tarif, txId);
         show('Děkujeme, objednávku máme. Potvrzení jsme poslali na ' + email + ' a do jednoho pracovního dne pošleme fakturu.', 'ok');
         form.reset(); renderRivals();
       })
