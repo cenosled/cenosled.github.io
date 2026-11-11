@@ -83,9 +83,9 @@
     <fieldset>
       <legend>Tarif</legend>
       <div class="tarify">
-        <label class="tarif"><input type="radio" name="tarif" value="Start" data-k="1"><span><b>Start</b><span class="price">490 Kč</span>1 konkurent, do 200 produktů</span></label>
-        <label class="tarif"><input type="radio" name="tarif" value="Standard" data-k="3" checked><span><b>Standard</b><span class="price">990 Kč</span>3 konkurenti, do 1&nbsp;000 produktů</span></label>
-        <label class="tarif"><input type="radio" name="tarif" value="Plus" data-k="5"><span><b>Plus</b><span class="price">1 990 Kč</span>5 konkurentů, do 3&nbsp;000 produktů, upozornění při změně ceny</span></label>
+        <label class="tarif"><input type="radio" name="tarif" value="Start" data-k="1"><span><b>Start</b><span class="price">490 Kč</span>1 konkurent, až 200 párů</span></label>
+        <label class="tarif"><input type="radio" name="tarif" value="Standard" data-k="3" checked><span><b>Standard</b><span class="price">990 Kč</span>až 3 konkurenti, celkem 1&nbsp;000 párů</span></label>
+        <label class="tarif"><input type="radio" name="tarif" value="Plus" data-k="5"><span><b>Plus</b><span class="price">1 990 Kč</span>až 5 konkurentů, celkem 3&nbsp;000 párů, upozornění při změně ceny</span></label>
       </div>
       <p class="hint">Cena za měsíc. Ceny jsou konečné, nejsme plátci DPH.</p>
     </fieldset>
@@ -99,11 +99,16 @@
       <div class="field">
         <label id="rivals-label">Konkurenti</label>
         <div id="rivals" aria-labelledby="rivals-label"></div>
-        <p class="hint">Konkurenty můžete později změnit — stačí napsat e-mail, změna platí od dalšího měsíčního přepárování.</p>
+        <p class="hint">Pár je váš produkt a stejný produkt u konkurenta; páry tarifu se dělí mezi konkurenty. Konkurenty můžete později změnit — stačí napsat e-mail, změna platí od dalšího měsíčního přepárování.</p>
       </div>
       <div class="field">
         <label for="email">E-mail pro denní přehledy</label>
         <input id="email" name="email" type="email" autocomplete="email" placeholder="vy@vas-eshop.cz" required>
+      </div>
+      <div class="field">
+        <label for="feed">XML feed vašeho e-shopu <span class="opt">— nepovinné</span></label>
+        <input id="feed" name="feed" type="text" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://vas-eshop.cz/heureka.xml">
+        <p class="hint">Stejný feed, jaký posíláte na Heureku, Zboží nebo do Google Nákupů. Vaše ceny pak čteme z něj, takže přehled bude rychlejší.</p>
       </div>
     </fieldset>
 
@@ -198,6 +203,7 @@
     var ico = String(d.get('ico') || '').replace(/\D/g, '');
     var email = String(d.get('email') || '').trim();
     var fakt = String(d.get('email_fakt') || '').trim();
+    var feed = String(d.get('feed') || '').trim();
 
     if (!urlOk(shop)) { show('Zadejte adresu svého e-shopu, například vas-eshop.cz', 'err'); return; }
     if (!rivals.length) { show('Zadejte alespoň jednoho konkurenta.', 'err'); return; }
@@ -205,6 +211,7 @@
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show('Zadejte e-mail pro denní přehledy.', 'err'); return; }
     if (!/^\d{8}$/.test(ico)) { show('IČO má 8 číslic.', 'err'); return; }
     if (fakt && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fakt)) { show('Zkontrolujte e-mail pro faktury.', 'err'); return; }
+    if (feed && !/^https?:\/\/\S+$/i.test(feed)) { show('Adresa feedu má začínat https://', 'err'); return; }
 
     d.set('typ', 'objednavka');
     d.set('shop', shop);
