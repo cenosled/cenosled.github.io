@@ -98,6 +98,20 @@
   .again a.btn { display: inline-block; background: #fff; color: var(--ink); font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 4px; }
 
   footer { padding: 28px 0 40px; font-size: 14px; color: var(--muted); }
+  footer a { color: var(--muted); }
+  footer .links { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .linkbtn { font: inherit; color: var(--muted); background: none; border: 0; padding: 0; width: auto; text-decoration: underline; cursor: pointer; }
+  .linkbtn:hover { background: none; color: var(--ink); }
+  .hint { font-weight: 400; color: var(--muted); }
+
+  .cc { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 50; max-width: 560px; margin: 0 auto;
+        background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px;
+        box-shadow: 0 10px 30px rgba(11,31,58,.18); font-size: 15px; }
+  .cc p { margin: 0 0 14px; color: var(--muted); }
+  .cc .row { display: flex; gap: 10px; }
+  .cc button { width: auto; flex: 1; padding: 10px 14px; }
+  .cc button.alt { background: var(--sheet); color: var(--ink); border-color: var(--ink); }
+  .cc button.alt:hover { background: #eef2f8; }
 
   @media (max-width: 860px) {
     .hero { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-bottom: 48px; }
@@ -127,23 +141,23 @@
       <form id="poptavka" novalidate>
         <div class="field">
           <label for="shop">Váš e-shop</label>
-          <input id="shop" name="shop" type="url" inputmode="url" placeholder="https://vas-eshop.cz" required>
+          <input id="shop" name="shop" type="text" inputmode="url" autocomplete="url" autocapitalize="off" spellcheck="false" placeholder="vas-eshop.cz" required>
         </div>
         <div class="field">
           <label for="rival">Konkurent, se kterým se chcete porovnat</label>
-          <input id="rival" name="rival" type="url" inputmode="url" placeholder="https://konkurent.cz" required>
+          <input id="rival" name="rival" type="text" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="konkurent.cz" required>
         </div>
         <div class="field">
           <label for="email">E-mail, kam tabulku pošleme</label>
-          <input id="email" name="email" type="email" placeholder="vy@vas-eshop.cz" required>
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="vy@vas-eshop.cz" required>
         </div>
         <div class="hp" aria-hidden="true">
           <label for="web">Toto pole nevyplňujte</label>
           <input id="web" name="web" type="text" tabindex="-1" autocomplete="off">
         </div>
-        <button type="submit">Poslat k porovnání</button>
+        <button type="submit">Chci porovnání zdarma</button>
         <p class="msg" id="msg" role="status" hidden></p>
-        <p class="small">Údaje použijeme jen k přípravě porovnání a k odpovědi. Nikomu je nepředáváme.</p>
+        <p class="small">Údaje použijeme jen k přípravě porovnání a k odpovědi, neprodáváme je ani nepředáváme dalším firmám. <a href="/zasady.html">Zásady ochrany údajů</a></p>
       </form>
     </div>
 
@@ -220,7 +234,7 @@
         <dt>Funguje to pro každý e-shop?</dt>
         <dd>Nejspolehlivěji zatím pro obchody na Shoptetu. U ostatních to zkusíme a dáme vám vědět, jestli se ceny podařilo načíst.</dd>
         <dt>Dozví se o tom konkurent?</dt>
-        <dd>Ne. Čteme jen veřejné stránky a vaše údaje nikomu nepředáváme.</dd>
+        <dd>Ne. Čteme jen veřejné stránky a vaše údaje neprodáváme ani nepředáváme dalším firmám.</dd>
         <dt>Co obsahuje bezplatné porovnání?</dt>
         <dd>Projdeme až 400 produktů konkurenta a do tabulky dáme 30 stejných produktů s největším rozdílem ceny. V souhrnu uvidíte, kolik shodných produktů jsme celkem našli a u kolika jste dražší nebo levnější. Bezplatné porovnání je jedno pro každý e-shop.</dd>
       </dl>
@@ -238,30 +252,106 @@
 
 <footer>
   <div class="wrap">
-    Provozovatel: Oleksii Bilan, IČO 19670168.
+    Provozovatel: Oleksii Bilan, IČO 19670168. Kontakt: <a href="mailto:info@cenosled.cz">info@cenosled.cz</a>
+    <div class="links">
+      <a href="/zasady.html">Zásady ochrany osobních údajů a cookies</a>
+      <button type="button" class="linkbtn" id="cc-open">Nastavení cookies</button>
+    </div>
   </div>
 </footer>
+
+<div class="cc" id="cc" role="dialog" aria-label="Souhlas s cookies" hidden>
+  <p>Rádi bychom měřili, kolik lidí přišlo z reklamy a vyplnilo formulář. K tomu potřebujeme cookies Googlu. Bez souhlasu stránka funguje stejně. <a href="/zasady.html#cookies">Podrobnosti</a></p>
+  <div class="row">
+    <button type="button" class="alt" id="cc-no">Jen nezbytné</button>
+    <button type="button" id="cc-yes">Povolit měření</button>
+  </div>
+</div>
 
 <script>
   // Adresa webové aplikace Apps Script (soubor formular.gs). Bez ní formulář nic neodešle.
   var FORM_URL = 'https://script.google.com/macros/s/AKfycby4a4ALh7AqBFnCcfLkZeU4y-4S3ntWTatzGE4iLS8XmAVWLdCbH-mnXisS7jOHGuTh/exec';
 
+  // Google Ads: ID účtu (AW-...) a štítek konverze „Odeslání formuláře“. Prázdné = měření vypnuto.
+  var ADS_ID = '';           // např. 'AW-1234567890'
+  var ADS_LABEL = '';        // např. 'AbCdEfGhIjKlMnOp'
+  // Volitelně Google Analytics 4 (G-...). Prázdné = bez GA4.
+  var GA4_ID = '';
+
+  // ---------- zdroj návštěvy (gclid, utm) ----------
+  var SRC_KEYS = ['gclid', 'gbraid', 'wbraid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term'];
+  (function () {
+    var q = new URLSearchParams(location.search), got = {};
+    SRC_KEYS.forEach(function (k) { if (q.get(k)) got[k] = q.get(k); });
+    if (Object.keys(got).length) { try { sessionStorage.setItem('cs_src', JSON.stringify(got)); } catch (e) {} }
+  })();
+  function source() {
+    try { return sessionStorage.getItem('cs_src') || ''; } catch (e) { return ''; }
+  }
+
+  // ---------- souhlas s cookies + Google tag ----------
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  var tagLoaded = false;
+  function consent() { try { return localStorage.getItem('cs_consent'); } catch (e) { return null; } }
+  function loadTag() {
+    var first = ADS_ID || GA4_ID;
+    if (tagLoaded || !first) return;
+    tagLoaded = true;
+    gtag('consent', 'default', { ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'denied', analytics_storage: 'granted' });
+    var sc = document.createElement('script');
+    sc.async = true; sc.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(first);
+    document.head.appendChild(sc);
+    gtag('js', new Date());
+    if (ADS_ID) gtag('config', ADS_ID);
+    if (GA4_ID) gtag('config', GA4_ID);
+  }
+  var cc = document.getElementById('cc');
+  function setConsent(v) {
+    try { localStorage.setItem('cs_consent', v); } catch (e) {}
+    cc.hidden = true;
+    if (v === 'yes') loadTag();
+    else if (tagLoaded) location.reload();
+  }
+  document.getElementById('cc-yes').addEventListener('click', function () { setConsent('yes'); });
+  document.getElementById('cc-no').addEventListener('click', function () { setConsent('no'); });
+  document.getElementById('cc-open').addEventListener('click', function () { cc.hidden = false; });
+  if (ADS_ID || GA4_ID) {
+    if (consent() === 'yes') loadTag();
+    else if (consent() !== 'no') cc.hidden = false;
+  }
+  function trackLead() {
+    if (!tagLoaded) return;
+    if (ADS_ID && ADS_LABEL) gtag('event', 'conversion', { send_to: ADS_ID + '/' + ADS_LABEL });
+    if (GA4_ID) gtag('event', 'generate_lead');
+  }
+
+  // ---------- formulář ----------
   var form = document.getElementById('poptavka');
   var msg = document.getElementById('msg');
   function show(text, cls) { msg.textContent = text; msg.className = 'msg ' + cls; msg.hidden = false; }
+  function normUrl(v) {
+    v = String(v || '').trim();
+    if (v && !/^https?:\/\//i.test(v)) v = 'https://' + v.replace(/^\/+/, '');
+    return v;
+  }
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     var d = new FormData(form);
-    var urlOk = function (v) { return /^https?:\/\/[^\s.]+\.[^\s]+$/i.test(String(v).trim()); };
-    if (!urlOk(d.get('shop')) || !urlOk(d.get('rival'))) { show('Zadejte obě adresy včetně https://', 'err'); return; }
+    d.set('shop', normUrl(d.get('shop')));
+    d.set('rival', normUrl(d.get('rival')));
+    var urlOk = function (v) { return /^https?:\/\/[^\s.\/]+\.[^\s]+$/i.test(String(v)); };
+    if (!urlOk(d.get('shop')) || !urlOk(d.get('rival'))) { show('Zadejte obě adresy, například vas-eshop.cz', 'err'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(d.get('email')).trim())) { show('Zadejte e-mail, na který máme tabulku poslat.', 'err'); return; }
     if (FORM_URL.indexOf('http') !== 0) { show('Formulář zatím není připojený. Doplňte adresu FORM_URL.', 'err'); return; }
+    d.set('src', source());
 
-    var btn = form.querySelector('button');
+    var btn = form.querySelector('button[type=submit]');
     btn.disabled = true;
     fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(d) })
       .then(function () {
+        trackLead();
         show('Skoro hotovo. Na ' + String(d.get('email')).trim() + ' jsme poslali odkaz pro potvrzení žádosti — klikněte na něj a tabulku pošleme do tří pracovních dnů.', 'ok');
         form.reset();
       })
