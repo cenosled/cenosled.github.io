@@ -5,15 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cenosled – porovnání cen s konkurencí pro e-shopy</title>
 <meta name="description" content="Pošlete adresu svého e-shopu a jednoho konkurenta. Zdarma dostanete tabulku stejných produktů s rozdílem cen.">
+<meta name="theme-color" content="#0b1f3a">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <style>
   :root {
-    --paper: #eef2f3;
+    --paper: #f4f6fa;
     --sheet: #ffffff;
-    --ink: #13262d;
-    --muted: #55686f;
-    --line: #cfd9dc;
-    --petrol: #0e5a6b;
-    --marker: #ffd84a;
+    --ink: #0b1f3a;
+    --muted: #4a5a72;
+    --line: #d3dae6;
+    --petrol: #1f52d6;
+    --marker: #2f6bff;
     --pricier: #b4321f;
     --cheaper: #1b7449;
     --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -26,8 +30,8 @@
   .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
 
   header.top { padding: 22px 0; }
-  .brand { font-weight: 800; font-size: 21px; letter-spacing: -0.02em; text-decoration: none; color: var(--ink); }
-  .brand span { background: var(--marker); padding: 0 6px; }
+  .brand { display: inline-block; line-height: 0; text-decoration: none; color: var(--ink); }
+  .brand svg { display: block; height: 34px; width: auto; }
 
   .hero { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 48px; align-items: start; padding-top: 28px; padding-bottom: 72px; }
   h1 { font-size: clamp(34px, 5.2vw, 58px); line-height: 1.04; letter-spacing: -0.035em; font-weight: 800; margin: 0 0 20px; }
@@ -38,15 +42,15 @@
   .field { margin-bottom: 16px; }
   input[type=url], input[type=email], input[type=text] {
     width: 100%; font: inherit; color: var(--ink); background: var(--sheet);
-    border: 1.5px solid #9fb0b5; border-radius: 4px; padding: 11px 12px;
+    border: 1.5px solid #9aa8bd; border-radius: 4px; padding: 11px 12px;
   }
-  input::placeholder { color: #8a9a9f; }
+  input::placeholder { color: #7a889c; }
   .hp { position: absolute; left: -9999px; }
   button {
-    font: inherit; font-weight: 700; color: var(--ink); background: var(--marker);
-    border: 1.5px solid var(--ink); border-radius: 4px; padding: 12px 20px; cursor: pointer; width: 100%;
+    font: inherit; font-weight: 700; color: #fff; background: var(--petrol);
+    border: 1.5px solid var(--petrol); border-radius: 4px; padding: 12px 20px; cursor: pointer; width: 100%;
   }
-  button:hover { background: #ffcf1f; }
+  button:hover { background: #173fae; border-color: #173fae; }
   button[disabled] { opacity: .6; cursor: default; }
   .small { font-size: 14px; color: var(--muted); margin: 12px 0 0; }
   .msg { margin: 14px 0 0; font-weight: 600; }
@@ -59,21 +63,21 @@
   .sample-head strong { color: var(--ink); }
   .scroll { overflow-x: auto; }
   table { border-collapse: collapse; width: 100%; font-size: 15px; font-variant-numeric: tabular-nums; }
-  th, td { padding: 11px 18px; text-align: right; white-space: nowrap; border-bottom: 1px solid #e3eaec; }
-  th { font-weight: 600; font-size: 13px; color: var(--muted); background: #f6f9fa; }
+  th, td { padding: 11px 18px; text-align: right; white-space: nowrap; border-bottom: 1px solid #e4e9f1; }
+  th { font-weight: 600; font-size: 13px; color: var(--muted); background: #f7f9fc; }
   th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 190px; }
   tr:last-child td { border-bottom: 0; }
   tr.hot td:first-child { box-shadow: inset 4px 0 0 var(--marker); }
   .up { color: var(--pricier); font-weight: 700; }
   .down { color: var(--cheaper); font-weight: 700; }
   .same { color: var(--muted); }
-  .sample-foot { padding: 12px 18px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); background: #f6f9fa; }
+  .sample-foot { padding: 12px 18px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); background: #f7f9fc; }
 
   section { padding: 64px 0; border-top: 1px solid var(--line); }
   h2 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.12; letter-spacing: -0.025em; font-weight: 800; margin: 0 0 28px; max-width: 20em; }
   .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; counter-reset: s; }
   .steps li { counter-increment: s; }
-  .steps li::before { content: counter(s); display: block; font-size: 44px; font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: var(--petrol); margin-bottom: 10px; }
+  .steps li::before { content: counter(s); display: block; font-size: 44px; font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: var(--marker); margin-bottom: 10px; }
   .steps h3, .fit h3 { font-size: 19px; margin: 0 0 6px; }
   .steps p, .fit p { margin: 0; color: var(--muted); }
   .fit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 48px; }
@@ -90,8 +94,8 @@
 
   .again { background: var(--ink); color: #fff; border-top: 0; }
   .again h2 { color: #fff; margin-bottom: 14px; }
-  .again p { color: #c3d0d4; margin: 0 0 22px; max-width: 34em; }
-  .again a.btn { display: inline-block; background: var(--marker); color: var(--ink); font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 4px; }
+  .again p { color: #c5cedd; margin: 0 0 22px; max-width: 34em; }
+  .again a.btn { display: inline-block; background: #fff; color: var(--ink); font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 4px; }
 
   footer { padding: 28px 0 40px; font-size: 14px; color: var(--muted); }
 
@@ -111,7 +115,7 @@
 <body>
 
 <header class="top">
-  <div class="wrap"><a class="brand" href="#"><span>Ceno</span>sled</a></div>
+  <div class="wrap"><a class="brand" href="#" aria-label="Cenosled"><svg xmlns="http://www.w3.org/2000/svg" height="34" viewBox="0 0 273.9 64" aria-hidden="true" focusable="false"><path d="M50.02 19.38 A22 22 0 1 0 50.02 44.62" fill="none" stroke="#0B1F3A" stroke-width="9" stroke-linecap="round"/><circle cx="32" cy="32" r="7" fill="#2F6BFF"/><path d="M91.68 47.16Q88.31 47.16 85.57 45.75Q82.84 44.35 81.24 41.68Q79.65 39.01 79.65 35.22V34.57Q79.65 30.78 81.24 28.11Q82.84 25.44 85.57 24.04Q88.31 22.63 91.68 22.63Q95 22.63 97.39 23.8Q99.78 24.97 101.25 27.01Q102.73 29.04 103.19 31.62L97.48 32.83Q97.3 31.43 96.64 30.31Q95.99 29.18 94.79 28.53Q93.6 27.87 91.82 27.87Q90.04 27.87 88.62 28.65Q87.19 29.42 86.37 30.94Q85.55 32.46 85.55 34.66V35.13Q85.55 37.33 86.37 38.85Q87.19 40.37 88.62 41.14Q90.04 41.91 91.82 41.91Q94.49 41.91 95.87 40.53Q97.25 39.15 97.62 36.91L103.33 38.26Q102.73 40.74 101.25 42.78Q99.78 44.82 97.39 45.99Q95 47.16 91.68 47.16Z M117.37 47.16Q113.91 47.16 111.27 45.68Q108.62 44.21 107.15 41.52Q105.67 38.82 105.67 35.17V34.61Q105.67 30.96 107.12 28.27Q108.58 25.58 111.2 24.11Q113.82 22.63 117.28 22.63Q120.7 22.63 123.22 24.15Q125.75 25.67 127.15 28.37Q128.56 31.06 128.56 34.61V36.63H111.66Q111.76 39.01 113.44 40.51Q115.13 42.01 117.56 42.01Q120.04 42.01 121.21 40.93Q122.38 39.85 122.99 38.54L127.81 41.07Q127.15 42.29 125.91 43.72Q124.67 45.14 122.62 46.15Q120.56 47.16 117.37 47.16ZM111.71 32.23H122.57Q122.38 30.21 120.95 29Q119.53 27.78 117.23 27.78Q114.85 27.78 113.44 29Q112.04 30.21 111.71 32.23Z M132.4 46.5V23.29H138.2V26.33H139.04Q139.6 25.11 141.15 24.01Q142.69 22.91 145.83 22.91Q148.54 22.91 150.58 24.15Q152.61 25.39 153.74 27.57Q154.86 29.75 154.86 32.65V46.5H148.96V33.12Q148.96 30.49 147.68 29.18Q146.39 27.87 144 27.87Q141.29 27.87 139.79 29.68Q138.29 31.48 138.29 34.71V46.5Z M170.87 47.16Q167.4 47.16 164.64 45.75Q161.88 44.35 160.29 41.68Q158.7 39.01 158.7 35.27V34.52Q158.7 30.78 160.29 28.11Q161.88 25.44 164.64 24.04Q167.4 22.63 170.87 22.63Q174.33 22.63 177.09 24.04Q179.85 25.44 181.44 28.11Q183.03 30.78 183.03 34.52V35.27Q183.03 39.01 181.44 41.68Q179.85 44.35 177.09 45.75Q174.33 47.16 170.87 47.16ZM170.87 41.91Q173.58 41.91 175.36 40.16Q177.14 38.4 177.14 35.13V34.66Q177.14 31.38 175.38 29.63Q173.63 27.87 170.87 27.87Q168.15 27.87 166.37 29.63Q164.59 31.38 164.59 34.66V35.13Q164.59 38.4 166.37 40.16Q168.15 41.91 170.87 41.91Z M196.7 47.16Q192.16 47.16 189.26 45.19Q186.36 43.22 185.75 39.57L191.18 38.17Q191.5 39.81 192.28 40.74Q193.05 41.68 194.2 42.08Q195.34 42.48 196.7 42.48Q198.76 42.48 199.74 41.75Q200.72 41.02 200.72 39.95Q200.72 38.87 199.79 38.29Q198.85 37.7 196.79 37.33L195.48 37.09Q193.05 36.63 191.04 35.81Q189.02 34.99 187.81 33.54Q186.59 32.09 186.59 29.79Q186.59 26.33 189.12 24.48Q191.65 22.63 195.76 22.63Q199.65 22.63 202.22 24.36Q204.8 26.1 205.59 28.9L200.12 30.59Q199.74 28.81 198.59 28.06Q197.45 27.31 195.76 27.31Q194.08 27.31 193.19 27.9Q192.3 28.48 192.3 29.51Q192.3 30.63 193.24 31.17Q194.17 31.71 195.76 31.99L197.07 32.23Q199.69 32.69 201.82 33.47Q203.95 34.24 205.19 35.67Q206.43 37.09 206.43 39.53Q206.43 43.18 203.79 45.17Q201.15 47.16 196.7 47.16Z M210.18 46.5V13.74H216.07V46.5Z M231.8 47.16Q228.34 47.16 225.69 45.68Q223.05 44.21 221.57 41.52Q220.1 38.82 220.1 35.17V34.61Q220.1 30.96 221.55 28.27Q223 25.58 225.62 24.11Q228.24 22.63 231.71 22.63Q235.12 22.63 237.65 24.15Q240.18 25.67 241.58 28.37Q242.98 31.06 242.98 34.61V36.63H226.09Q226.18 39.01 227.87 40.51Q229.55 42.01 231.99 42.01Q234.47 42.01 235.64 40.93Q236.81 39.85 237.42 38.54L242.24 41.07Q241.58 42.29 240.34 43.72Q239.1 45.14 237.04 46.15Q234.98 47.16 231.8 47.16ZM226.14 32.23H236.99Q236.81 30.21 235.38 29Q233.95 27.78 231.66 27.78Q229.27 27.78 227.87 29Q226.46 30.21 226.14 32.23Z M256.18 47.16Q253.42 47.16 251.01 45.77Q248.6 44.39 247.15 41.73Q245.7 39.06 245.7 35.27V34.52Q245.7 30.73 247.15 28.06Q248.6 25.39 250.99 24.01Q253.37 22.63 256.18 22.63Q258.29 22.63 259.72 23.12Q261.14 23.61 262.03 24.36Q262.92 25.11 263.39 25.95H264.23V13.74H270.13V46.5H264.33V43.69H263.48Q262.69 45 261.03 46.08Q259.36 47.16 256.18 47.16ZM257.96 42.01Q260.68 42.01 262.5 40.25Q264.33 38.5 264.33 35.13V34.66Q264.33 31.29 262.52 29.54Q260.72 27.78 257.96 27.78Q255.25 27.78 253.42 29.54Q251.6 31.29 251.6 34.66V35.13Q251.6 38.5 253.42 40.25Q255.25 42.01 257.96 42.01Z" fill="#0B1F3A"/></svg></a></div>
 </header>
 
 <main>
@@ -161,7 +165,7 @@
           </tbody>
         </table>
       </div>
-      <div class="sample-foot">Žlutě označené řádky: tady prodáváte dráž než konkurent.</div>
+      <div class="sample-foot">Modře označené řádky: tady prodáváte dráž než konkurent.</div>
     </div>
   </div>
 
