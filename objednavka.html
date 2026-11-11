@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Objednávka sledování cen – Cenosled</title>
+<meta name="description" content="Objednejte si denní přehled cen konkurence. Platí se měsíčně předem, sledování začne po přijetí platby.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0b1f3a">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+  :root {
+    --paper: #f4f6fa; --sheet: #ffffff; --ink: #0b1f3a; --muted: #4a5a72; --line: #d3dae6;
+    --petrol: #1f52d6; --marker: #2f6bff; --pricier: #b4321f; --cheaper: #1b7449;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.55 var(--font); }
+  a { color: var(--petrol); }
+  :focus-visible { outline: 3px solid var(--petrol); outline-offset: 2px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+  header { padding: 22px 0; }
+  header a { font-weight: 800; font-size: 22px; letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
+  h1 { font-size: clamp(30px, 4.4vw, 44px); line-height: 1.08; letter-spacing: -0.03em; font-weight: 800; margin: 8px 0 12px; }
+  .lead { color: var(--muted); margin: 0 0 28px; }
+
+  form { background: var(--sheet); border: 1px solid var(--line); border-top: 4px solid var(--marker); border-radius: 8px;
+         padding: 28px; box-shadow: 0 1px 2px rgba(11,31,58,.06), 0 16px 40px rgba(11,31,58,.10); margin-bottom: 48px; }
+  fieldset { border: 0; margin: 0 0 26px; padding: 0; }
+  legend { font-weight: 800; font-size: 19px; margin: 0 0 12px; padding: 0; }
+  label { display: block; font-weight: 600; font-size: 15px; margin: 0 0 6px; }
+  .opt { font-weight: 400; color: var(--muted); }
+  .field { margin-bottom: 16px; }
+  input[type=text], input[type=email], textarea {
+    width: 100%; font: inherit; color: var(--ink); background: var(--sheet);
+    border: 1.5px solid #9aa8bd; border-radius: 4px; padding: 11px 12px;
+  }
+  textarea { min-height: 80px; resize: vertical; }
+  input::placeholder, textarea::placeholder { color: #7a889c; }
+  .hp { position: absolute; left: -9999px; }
+
+  .tarify { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .tarif { position: relative; }
+  .tarif input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .tarif > span { display: block; height: 100%; border: 1.5px solid var(--line); border-radius: 6px; padding: 14px; font-size: 15px; color: var(--muted); }
+  .tarif b { display: block; color: var(--ink); font-size: 17px; }
+  .tarif .price { display: block; color: var(--ink); font-weight: 800; font-size: 20px; margin: 4px 0 6px; }
+  .tarif input:checked + span { border-color: var(--marker); box-shadow: 0 0 0 2px var(--marker) inset; background: #f3f6ff; }
+  .tarif input:focus-visible + span { outline: 3px solid var(--petrol); outline-offset: 2px; }
+
+  .rival + .rival { margin-top: 8px; }
+  .hint { font-size: 14px; color: var(--muted); margin: 6px 0 0; }
+  .terms { background: #f7f9fc; border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; font-size: 15px; color: var(--muted); margin: 0 0 18px; }
+  .terms ul { margin: 0; padding-left: 20px; }
+  button {
+    font: inherit; font-weight: 700; color: #fff; background: var(--petrol);
+    border: 1.5px solid var(--petrol); border-radius: 4px; padding: 13px 20px; cursor: pointer; width: 100%;
+  }
+  button:hover { background: #173fae; border-color: #173fae; }
+  button[disabled] { opacity: .6; cursor: default; }
+  .msg { margin: 14px 0 0; font-weight: 600; }
+  .msg.ok { color: var(--cheaper); }
+  .msg.err { color: var(--pricier); }
+  .small { font-size: 14px; color: var(--muted); margin: 12px 0 0; }
+  footer { padding: 0 0 40px; font-size: 14px; color: var(--muted); }
+
+  @media (max-width: 640px) {
+    form { padding: 20px; }
+    .tarify { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header><div class="wrap"><a href="/">← Cenosled</a></div></header>
+
+<main class="wrap">
+  <h1>Objednávka sledování cen</h1>
+  <p class="lead">Každý den vám pošleme přehled, kde jste dražší nebo levnější než vybraní konkurenti, a upozorníme na změny cen.</p>
+
+  <form id="objednavka" novalidate>
+    <fieldset>
+      <legend>Tarif</legend>
+      <div class="tarify">
+        <label class="tarif"><input type="radio" name="tarif" value="Start" data-k="1"><span><b>Start</b><span class="price">490 Kč</span>1 konkurent, do 200 produktů</span></label>
+        <label class="tarif"><input type="radio" name="tarif" value="Standard" data-k="3" checked><span><b>Standard</b><span class="price">990 Kč</span>3 konkurenti, do 1&nbsp;000 produktů</span></label>
+        <label class="tarif"><input type="radio" name="tarif" value="Plus" data-k="5"><span><b>Plus</b><span class="price">1 990 Kč</span>5 konkurentů, do 3&nbsp;000 produktů, upozornění při změně ceny</span></label>
+      </div>
+      <p class="hint">Cena za měsíc. Ceny jsou konečné, nejsme plátci DPH.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Co sledovat</legend>
+      <div class="field">
+        <label for="shop">Váš e-shop</label>
+        <input id="shop" name="shop" type="text" inputmode="url" autocomplete="url" autocapitalize="off" spellcheck="false" placeholder="vas-eshop.cz" required>
+      </div>
+      <div class="field">
+        <label id="rivals-label">Konkurenti</label>
+        <div id="rivals" aria-labelledby="rivals-label"></div>
+        <p class="hint">Konkurenty můžete později změnit — stačí napsat e-mail, změna platí od dalšího měsíčního přepárování.</p>
+      </div>
+      <div class="field">
+        <label for="email">E-mail pro denní přehledy</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="vy@vas-eshop.cz" required>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Fakturační údaje</legend>
+      <div class="field">
+        <label for="ico">IČO</label>
+        <input id="ico" name="ico" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="12345678" required>
+        <p class="hint">Název a adresu doplníme z obchodního rejstříku (ARES).</p>
+      </div>
+      <div class="field">
+        <label for="email_fakt">E-mail pro faktury <span class="opt">— pokud je jiný</span></label>
+        <input id="email_fakt" name="email_fakt" type="email" autocomplete="off" placeholder="ucetni@vas-eshop.cz">
+      </div>
+      <div class="field">
+        <label for="poznamka">Poznámka <span class="opt">— nepovinné</span></label>
+        <textarea id="poznamka" name="poznamka" maxlength="300" placeholder="Např. které kategorie nebo značky jsou pro vás nejdůležitější"></textarea>
+      </div>
+    </fieldset>
+
+    <div class="terms">
+      <ul>
+        <li>Platí se měsíčně předem na základě faktury.</li>
+        <li>Sledování spustíme po přijetí platby.</li>
+        <li>Zrušit můžete kdykoli e-mailem na <a href="mailto:info@cenosled.cz">info@cenosled.cz</a>, další faktura se už nevystaví.</li>
+      </ul>
+    </div>
+
+    <div class="hp" aria-hidden="true">
+      <label for="web">Toto pole nevyplňujte</label>
+      <input id="web" name="web" type="text" tabindex="-1" autocomplete="off">
+    </div>
+    <button type="submit">Objednat</button>
+    <p class="msg" id="msg" role="status" hidden></p>
+    <p class="small">Údaje použijeme k poskytování služby a fakturaci. <a href="/zasady.html">Zásady ochrany údajů</a></p>
+  </form>
+</main>
+
+<footer>
+  <div class="wrap">Provozovatel: Oleksii Bilan, IČO 19670168, se sídlem Nad sokolovnou 125/9, 147 00 Praha 4, zapsaný v živnostenském rejstříku.</div>
+</footer>
+
+<script>
+  // Stejná webová aplikace Apps Script jako formulář na úvodní stránce (Code.gs → doPost → objednavka_ v predplatne.gs).
+  var FORM_URL = 'https://script.google.com/macros/s/AKfycby4a4ALh7AqBFnCcfLkZeU4y-4S3ntWTatzGE4iLS8XmAVWLdCbH-mnXisS7jOHGuTh/exec';
+
+  var form = document.getElementById('objednavka');
+  var msg = document.getElementById('msg');
+  var box = document.getElementById('rivals');
+  var q = new URLSearchParams(location.search);
+
+  function show(text, cls) { msg.textContent = text; msg.className = 'msg ' + cls; msg.hidden = false; }
+  function normUrl(v) {
+    v = String(v || '').trim();
+    if (v && !/^https?:\/\//i.test(v)) v = 'https://' + v.replace(/^\/+/, '');
+    return v;
+  }
+  function urlOk(v) { return /^https?:\/\/[^\s.\/]+\.[^\s]+$/i.test(String(v)); }
+
+  // Pole pro konkurenty podle tarifu, vyplněné hodnoty zůstávají.
+  function renderRivals() {
+    var k = Number(form.querySelector('input[name=tarif]:checked').dataset.k);
+    var old = Array.prototype.map.call(box.querySelectorAll('input'), function (i) { return i.value; });
+    if (!old.length && q.get('rival')) old = [q.get('rival')];
+    box.innerHTML = '';
+    for (var i = 0; i < k; i++) {
+      var inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'rival'; inp.inputMode = 'url';
+      inp.autocapitalize = 'off'; inp.spellcheck = false;
+      inp.placeholder = i === 0 ? 'konkurent.cz' : 'další-konkurent.cz (nepovinné)';
+      inp.setAttribute('aria-label', 'Konkurent ' + (i + 1));
+      inp.value = old[i] || '';
+      box.appendChild(inp);
+    }
+  }
+
+  // Předvyplnění z odkazu v e-mailu s bezplatným porovnáním (?tarif=…&shop=…&rival=…).
+  if (q.get('tarif')) {
+    var r = form.querySelector('input[name=tarif][value="' + q.get('tarif').replace(/[^A-Za-z]/g, '') + '"]');
+    if (r) r.checked = true;
+  }
+  if (q.get('shop')) document.getElementById('shop').value = q.get('shop');
+  renderRivals();
+  Array.prototype.forEach.call(form.querySelectorAll('input[name=tarif]'), function (r) { r.addEventListener('change', renderRivals); });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var d = new FormData(form);
+    var shop = normUrl(d.get('shop'));
+    var rivals = Array.prototype.map.call(box.querySelectorAll('input'), function (i) { return normUrl(i.value); })
+      .filter(function (v) { return v; });
+    var ico = String(d.get('ico') || '').replace(/\D/g, '');
+    var email = String(d.get('email') || '').trim();
+    var fakt = String(d.get('email_fakt') || '').trim();
+
+    if (!urlOk(shop)) { show('Zadejte adresu svého e-shopu, například vas-eshop.cz', 'err'); return; }
+    if (!rivals.length) { show('Zadejte alespoň jednoho konkurenta.', 'err'); return; }
+    if (!rivals.every(urlOk)) { show('Zkontrolujte adresy konkurentů, například konkurent.cz', 'err'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { show('Zadejte e-mail pro denní přehledy.', 'err'); return; }
+    if (!/^\d{8}$/.test(ico)) { show('IČO má 8 číslic.', 'err'); return; }
+    if (fakt && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fakt)) { show('Zkontrolujte e-mail pro faktury.', 'err'); return; }
+
+    d.set('typ', 'objednavka');
+    d.set('shop', shop);
+    d.set('rivals', rivals.join('\n'));
+    d.set('ico', ico);
+
+    var btn = form.querySelector('button[type=submit]');
+    btn.disabled = true;
+    fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(d) })
+      .then(function () {
+        show('Děkujeme, objednávku máme. Potvrzení jsme poslali na ' + email + ' a do jednoho pracovního dne pošleme fakturu.', 'ok');
+        form.reset(); renderRivals();
+      })
+      .catch(function () { show('Odeslání se nepovedlo. Zkontrolujte připojení a pošlete objednávku znovu.', 'err'); })
+      .then(function () { btn.disabled = false; });
+  });
+</script>
+</body>
+</html>

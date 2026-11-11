@@ -98,6 +98,12 @@
   .plans th, .plans td { text-align: left; white-space: normal; }
   .plans td:last-child, .plans th:last-child { text-align: right; white-space: nowrap; }
   .plans td:first-child { font-weight: 700; min-width: 110px; }
+  .plans td:nth-child(3), .plans th:nth-child(3) { text-align: right; white-space: nowrap; }
+  .plans td:last-child, .plans th:last-child { width: 1%; }
+  a.order { display: inline-block; font-weight: 700; font-size: 15px; text-decoration: none; color: var(--petrol);
+            border: 1.5px solid var(--petrol); border-radius: 4px; padding: 6px 12px; }
+  a.order:hover { background: var(--petrol); color: #fff; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
   dl { margin: 0; max-width: 46em; }
   dt { font-weight: 700; margin-top: 22px; }
@@ -238,11 +244,11 @@
       <h2>Když se vám tabulka osvědčí, může chodit každý den</h2>
       <div class="scroll">
         <table class="plans">
-          <thead><tr><th>Tarif</th><th>Co obsahuje</th><th>Cena za měsíc</th></tr></thead>
+          <thead><tr><th>Tarif</th><th>Co obsahuje</th><th>Cena za měsíc</th><th><span class="sr">Objednat</span></th></tr></thead>
           <tbody>
-            <tr><td>Start</td><td>1 konkurent, do 200 produktů, přehled jednou denně</td><td>490 Kč</td></tr>
-            <tr><td>Standard</td><td>3 konkurenti, do 1&nbsp;000 produktů, přehled jednou denně</td><td>990 Kč</td></tr>
-            <tr><td>Plus</td><td>5 konkurentů, do 3&nbsp;000 produktů, upozornění při změně ceny</td><td>1 990 Kč</td></tr>
+            <tr><td>Start</td><td>1 konkurent, do 200 produktů, přehled jednou denně</td><td>490 Kč</td><td><a class="order" href="/objednavka.html?tarif=Start">Objednat</a></td></tr>
+            <tr><td>Standard</td><td>3 konkurenti, do 1&nbsp;000 produktů, přehled jednou denně</td><td>990 Kč</td><td><a class="order" href="/objednavka.html?tarif=Standard">Objednat</a></td></tr>
+            <tr><td>Plus</td><td>5 konkurentů, do 3&nbsp;000 produktů, upozornění při změně ceny</td><td>1 990 Kč</td><td><a class="order" href="/objednavka.html?tarif=Plus">Objednat</a></td></tr>
           </tbody>
         </table>
       </div>
