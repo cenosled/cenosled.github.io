@@ -33,11 +33,23 @@
   .brand { display: inline-block; line-height: 0; text-decoration: none; color: var(--ink); }
   .brand svg { display: block; height: 34px; width: auto; }
 
-  .hero { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 48px; align-items: start; padding-top: 28px; padding-bottom: 72px; }
+  .hero { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); grid-template-areas: "text form" "plus form"; column-gap: 56px; row-gap: 0; align-items: center; padding-top: 36px; padding-bottom: 80px; }
+  .hero-text { grid-area: text; align-self: end; }
+  .hero form { grid-area: form; }
+  .pluses { grid-area: plus; align-self: start; }
+  .pluses { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .pluses li { position: relative; padding-left: 32px; font-weight: 600; }
+  .pluses li::before { content: ""; position: absolute; left: 0; top: 3px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--marker) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-6.5' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px no-repeat; }
+  .form-title { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 4px; }
+  .form-sub { font-size: 15px; color: var(--muted); margin: 0 0 18px; }
+  .sample-wrap > * { max-width: 820px; }
+  .sample-intro { color: var(--muted); margin: -16px 0 24px; max-width: 40em; }
   h1 { font-size: clamp(34px, 5.2vw, 58px); line-height: 1.04; letter-spacing: -0.035em; font-weight: 800; margin: 0 0 20px; }
-  .lead { font-size: 19px; color: var(--muted); margin: 0 0 28px; max-width: 34em; }
+  .lead { font-size: 20px; color: var(--muted); margin: 0 0 28px; max-width: 30em; }
 
-  form { background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 22px; }
+  form { background: var(--sheet); border: 1px solid var(--line); border-top: 4px solid var(--marker); border-radius: 8px; padding: 26px;
+         box-shadow: 0 1px 2px rgba(11,31,58,.06), 0 16px 40px rgba(11,31,58,.10); }
   label { display: block; font-weight: 600; font-size: 15px; margin: 0 0 6px; }
   .field { margin-bottom: 16px; }
   input[type=url], input[type=email], input[type=text] {
@@ -114,7 +126,9 @@
   .cc button.alt:hover { background: #eef2f8; }
 
   @media (max-width: 860px) {
-    .hero { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-bottom: 48px; }
+    .hero { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "form" "plus"; row-gap: 24px; padding-top: 16px; padding-bottom: 48px; }
+    .lead { font-size: 18px; margin-bottom: 20px; }
+    form { padding: 20px; }
     .steps, .fit { grid-template-columns: minmax(0, 1fr); gap: 24px; }
     section { padding: 44px 0; }
     table { font-size: 14px; }
@@ -134,54 +148,67 @@
 
 <main>
   <div class="wrap hero">
-    <div>
+    <div class="hero-text">
       <h1>Kde jste dražší než konkurence</h1>
-      <p class="lead">Pošlete adresu svého e-shopu a jednoho konkurenta. Do tří pracovních dnů vám zdarma pošleme tabulku stejných produktů s cenami obou obchodů vedle sebe. V bezplatné ukázce projdeme až 400 produktů konkurenta a ukážeme 30 produktů s největším rozdílem ceny.</p>
-
-      <form id="poptavka" novalidate>
-        <div class="field">
-          <label for="shop">Váš e-shop</label>
-          <input id="shop" name="shop" type="text" inputmode="url" autocomplete="url" autocapitalize="off" spellcheck="false" placeholder="vas-eshop.cz" required>
-        </div>
-        <div class="field">
-          <label for="rival">Konkurent, se kterým se chcete porovnat</label>
-          <input id="rival" name="rival" type="text" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="konkurent.cz" required>
-        </div>
-        <div class="field">
-          <label for="email">E-mail, kam tabulku pošleme</label>
-          <input id="email" name="email" type="email" autocomplete="email" placeholder="vy@vas-eshop.cz" required>
-        </div>
-        <div class="hp" aria-hidden="true">
-          <label for="web">Toto pole nevyplňujte</label>
-          <input id="web" name="web" type="text" tabindex="-1" autocomplete="off">
-        </div>
-        <button type="submit">Chci porovnání zdarma</button>
-        <p class="msg" id="msg" role="status" hidden></p>
-        <p class="small">Údaje použijeme jen k přípravě porovnání a k odpovědi, neprodáváme je ani nepředáváme dalším firmám. <a href="/zasady.html">Zásady ochrany údajů</a></p>
-      </form>
+      <p class="lead">Pošlete adresu svého e-shopu a jednoho konkurenta. Do tří pracovních dnů vám zdarma pošleme tabulku stejných produktů s cenami obou obchodů vedle sebe.</p>
     </div>
+    <ul class="pluses">
+        <li>První porovnání zdarma a nezávazně</li>
+        <li>Bez instalace a bez přístupu do administrace</li>
+        <li>Ceny i od konkurentů, kteří nejsou na Heurece</li>
+    </ul>
 
-    <div class="sample" aria-label="Ukázka porovnání">
-      <div class="sample-head"><strong>Ukázka tabulky, kterou dostanete</strong><span>smyšlená data</span></div>
-      <div class="scroll">
-        <table>
-          <thead>
-            <tr><th>Produkt</th><th>Vy</th><th>Konkurent</th><th>Rozdíl</th></tr>
-          </thead>
-          <tbody>
-            <tr class="hot"><td>Mlýnek na kávu Tero M2</td><td>3 092 Kč</td><td>2 899 Kč</td><td class="up">+6,7 %</td></tr>
-            <tr class="hot"><td>Konvice s teploměrem Vira 0,9 l</td><td>2 945 Kč</td><td>2 799 Kč</td><td class="up">+5,2 %</td></tr>
-            <tr class="hot"><td>Dripper keramický Olla 02</td><td>563 Kč</td><td>559 Kč</td><td class="up">+0,7 %</td></tr>
-            <tr><td>Váha s časovačem Brio</td><td>989 Kč</td><td>989 Kč</td><td class="same">stejně</td></tr>
-            <tr><td>Filtry papírové Olla 02, 100 ks</td><td>199 Kč</td><td>199 Kč</td><td class="same">stejně</td></tr>
-            <tr><td>Pákový kávovar Lumo Duo</td><td>6 625 Kč</td><td>6 890 Kč</td><td class="down">−3,8 %</td></tr>
-            <tr><td>Odklepávač na sedlinu Tamp</td><td>7 774 Kč</td><td>8 190 Kč</td><td class="down">−5,1 %</td></tr>
-          </tbody>
-        </table>
+    <form id="poptavka" novalidate>
+      <p class="form-title">Porovnání zdarma</p>
+      <p class="form-sub">Projdeme až 400 produktů konkurenta a ukážeme 30 s největším rozdílem ceny.</p>
+      <div class="field">
+        <label for="shop">Váš e-shop</label>
+        <input id="shop" name="shop" type="text" inputmode="url" autocomplete="url" autocapitalize="off" spellcheck="false" placeholder="vas-eshop.cz" required>
       </div>
-      <div class="sample-foot">Modře označené řádky: tady prodáváte dráž než konkurent.</div>
-    </div>
+      <div class="field">
+        <label for="rival">Konkurent, se kterým se chcete porovnat</label>
+        <input id="rival" name="rival" type="text" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="konkurent.cz" required>
+      </div>
+      <div class="field">
+        <label for="email">E-mail, kam tabulku pošleme</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="vy@vas-eshop.cz" required>
+      </div>
+      <div class="hp" aria-hidden="true">
+        <label for="web">Toto pole nevyplňujte</label>
+        <input id="web" name="web" type="text" tabindex="-1" autocomplete="off">
+      </div>
+      <button type="submit">Chci porovnání zdarma</button>
+      <p class="msg" id="msg" role="status" hidden></p>
+      <p class="small">Údaje použijeme jen k přípravě porovnání a k odpovědi, neprodáváme je ani nepředáváme dalším firmám. <a href="/zasady.html">Zásady ochrany údajů</a></p>
+    </form>
   </div>
+
+  <section>
+    <div class="wrap sample-wrap">
+      <h2>Takhle vypadá tabulka, kterou dostanete</h2>
+      <p class="sample-intro">Nahoře jsou produkty, kde prodáváte dráž než konkurent. Hned vidíte, kde ztrácíte zákazníky a kde můžete cenu naopak zvednout.</p>
+      <div class="sample" aria-label="Ukázka porovnání">
+        <div class="sample-head"><strong>Váš e-shop vs. konkurent</strong><span>smyšlená data</span></div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr><th>Produkt</th><th>Vy</th><th>Konkurent</th><th>Rozdíl</th></tr>
+            </thead>
+            <tbody>
+              <tr class="hot"><td>Mlýnek na kávu Tero M2</td><td>3 092 Kč</td><td>2 899 Kč</td><td class="up">+6,7 %</td></tr>
+              <tr class="hot"><td>Konvice s teploměrem Vira 0,9 l</td><td>2 945 Kč</td><td>2 799 Kč</td><td class="up">+5,2 %</td></tr>
+              <tr class="hot"><td>Dripper keramický Olla 02</td><td>563 Kč</td><td>559 Kč</td><td class="up">+0,7 %</td></tr>
+              <tr><td>Váha s časovačem Brio</td><td>989 Kč</td><td>989 Kč</td><td class="same">stejně</td></tr>
+              <tr><td>Filtry papírové Olla 02, 100 ks</td><td>199 Kč</td><td>199 Kč</td><td class="same">stejně</td></tr>
+              <tr><td>Pákový kávovar Lumo Duo</td><td>6 625 Kč</td><td>6 890 Kč</td><td class="down">−3,8 %</td></tr>
+              <tr><td>Odklepávač na sedlinu Tamp</td><td>7 774 Kč</td><td>8 190 Kč</td><td class="down">−5,1 %</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="sample-foot">Modře označené řádky: tady prodáváte dráž než konkurent.</div>
+      </div>
+    </div>
+  </section>
 
   <section>
     <div class="wrap">
