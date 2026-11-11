@@ -256,7 +256,7 @@
     btn.disabled = true;
     fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(d) })
       .then(function () {
-        show('Odesláno. Tabulku pošleme na ' + String(d.get('email')).trim() + ' do tří pracovních dnů.', 'ok');
+        show('Skoro hotovo. Na ' + String(d.get('email')).trim() + ' jsme poslali odkaz pro potvrzení žádosti — klikněte na něj a tabulku pošleme do tří pracovních dnů.', 'ok');
         form.reset();
       })
       .catch(function () { show('Odeslání se nepovedlo. Zkontrolujte připojení a pošlete formulář znovu.', 'err'); })
