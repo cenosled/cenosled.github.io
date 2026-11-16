@@ -40,6 +40,7 @@ a{color:var(--accent)}.empty{color:var(--mute);padding:24px;text-align:center}
 <h1>Моніторинг дотримання РРЦ</h1>
 <div class="sub" id="sub"></div>
 <div class="kpis" id="kpis"></div>
+<div id="dyn"></div>
 <div id="compl"></div>
 <h2>Магазини, що продають нижче РРЦ</h2>
 <div class="filters">
@@ -76,6 +77,54 @@ kpi(D.kpi.items, 'товарних позицій нижче РРЦ', 'red');
 kpi(D.kpi.avg ? pct(D.kpi.avg) : '—', 'середнє відхилення від РРЦ');
 kpi(D.kpi.checkedShops, 'магазинів під моніторингом (' + D.kpi.checkedPages + ' сторінок)');
 if (D.kpi.fixed30) kpi(D.kpi.fixed30, 'позицій виправлено за 30 днів', 'green');
+if (D.kpi.gap) kpi(money(D.kpi.gap), 'сума заниження цін (по 1 шт. кожної позиції)', 'red');
+
+// З 16.11.2026: динаміка — щоденні знімки (лист «Динаміка») і виправлення по тижнях
+(function dyn() {
+  const T = D.trend || [], F = D.fixedWeeks || [];
+  if (!T.length && !F.length) return;
+  const box = $('dyn');
+  box.appendChild(el('h2', '', 'Динаміка'));
+  const card = el('div', 'card'); box.appendChild(card);
+  const cur = T[T.length - 1];
+  if (cur) {
+    const ago = T.filter(x => x.t <= cur.t - 6 * 864e5).pop() || T[0];
+    if (ago && ago !== cur) {
+      const dd = (a, b, f) => { const v = a - b; return v === 0 ? 'без змін' : (v < 0 ? '▼ ' : '▲ ') + f(Math.abs(v)); };
+      card.appendChild(el('div', '', 'Порівняно з ' + ago.d + ': магазинів-порушників ' + dd(cur.s, ago.s, String) +
+        ', позицій ' + dd(cur.i, ago.i, String) + ', сума заниження ' + dd(cur.g, ago.g, money) + '.'));
+    }
+  }
+  const NS = 'http' + '://www.w3.org/2000/svg';
+  const svg = (w, h) => { const e = document.createElementNS(NS, 'svg'); e.setAttribute('viewBox', '0 0 ' + w + ' ' + h); e.setAttribute('width', '100%'); e.style.maxWidth = w + 'px'; e.style.display = 'block'; e.style.marginTop = '10px'; return e; };
+  const node = (t, a, txt) => { const e = document.createElementNS(NS, t); Object.keys(a).forEach(k => e.setAttribute(k, a[k])); if (txt !== undefined) e.textContent = txt; return e; };
+  if (T.length >= 2) {
+    card.appendChild(el('div', 'sub', 'Магазинів нижче РРЦ (червоне) і позицій нижче РРЦ (сіре) по днях'));
+    const W = 680, H = 180, P = 28, s = svg(W, H);
+    const max = Math.max.apply(null, T.map(x => Math.max(x.i, x.s))) || 1;
+    const X = k => P + (W - 2 * P) * (T.length === 1 ? 0 : k / (T.length - 1)), Y = v => H - P - (H - 2 * P) * v / max;
+    [['i', '#9aa3b2'], ['s', '#c8372d']].forEach(([f, c]) => {
+      s.appendChild(node('polyline', { points: T.map((x, k) => X(k) + ',' + Y(x[f])).join(' '), fill: 'none', stroke: c, 'stroke-width': 2 }));
+      const lx = T.length - 1; s.appendChild(node('text', { x: X(lx) + 4, y: Y(T[lx][f]) + 4, 'font-size': 11, fill: c }, T[lx][f]));
+    });
+    [0, T.length - 1].forEach(k => s.appendChild(node('text', { x: X(k), y: H - 8, 'font-size': 11, fill: '#6b7383', 'text-anchor': k ? 'end' : 'start' }, T[k].d)));
+    card.appendChild(s);
+  } else {
+    card.appendChild(el('div', 'sub', 'Щоденна статистика збирається з 16.11.2026 — графік по днях з’явиться за кілька днів.'));
+  }
+  if (F.length) {
+    card.appendChild(el('div', 'sub', 'Скільки позицій магазини виправили — по тижнях (тиждень з понеділка)'));
+    const W = 680, H = 170, P = 24, s = svg(W, H);
+    const max = Math.max.apply(null, F.map(x => x.n)) || 1, bw = (W - 2 * P) / F.length;
+    F.forEach((x, k) => {
+      const h = (H - 2 * P - 10) * x.n / max, x0 = P + k * bw;
+      s.appendChild(node('rect', { x: x0 + bw * 0.15, y: H - P - h, width: bw * 0.7, height: h, rx: 3, fill: '#1f8a4c' }));
+      s.appendChild(node('text', { x: x0 + bw / 2, y: H - P - h - 4, 'font-size': 11, 'text-anchor': 'middle', fill: '#1d2330' }, x.n));
+      s.appendChild(node('text', { x: x0 + bw / 2, y: H - 6, 'font-size': 11, 'text-anchor': 'middle', fill: '#6b7383' }, x.w));
+    });
+    card.appendChild(s);
+  }
+})();
 
 if (D.complaints.length) {
   $('compl').appendChild(el('h2', '', 'Результати перевірок'));
