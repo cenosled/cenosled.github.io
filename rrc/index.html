@@ -87,9 +87,10 @@ if (D.complaints.length) {
       (c.gone ? ' · знято з продажу / немає в наявності: ' + c.gone : '') + ' · досі нижче РРЦ: ' + left +
       ' · магазинів, що виправили все: ' + c.shopsFixed + ' з ' + c.shopsAll));
     const chips = el('div', 'chips');
+    card.appendChild(el('div', 'sub', 'Зелений — магазин виправив або зняв з продажу всі позиції; червоний — не виправив жодної.'));
     c.stores.forEach(s => {
       const done = s.fixed + s.gone === s.all;
-      chips.appendChild(el('span', 'chip ' + (done ? 'ok' : (s.fixed ? '' : 'bad')), s.d + ' ' + s.fixed + '/' + s.all));
+      chips.appendChild(el('span', 'chip ' + (done ? 'ok' : (s.fixed ? '' : 'bad')), s.d + ' ' + s.fixed + '/' + s.all + (s.gone ? ' · знято ' + s.gone : '')));
     });
     card.appendChild(chips);
     $('compl').appendChild(card);
