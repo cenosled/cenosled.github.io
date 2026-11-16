@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /rrc/
 
 Sitemap: https://cenosled.cz/sitemap.xml

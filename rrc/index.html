@@ -1,0 +1,145 @@
+<!DOCTYPE html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>Моніторинг дотримання РРЦ</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mute:#6b7383;--line:#e4e7ec;--red:#c8372d;--red-bg:#fdeceb;--green:#1f8a4c;--green-bg:#e7f5ec;--accent:#2f5bd3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:32px 0 12px}
+.sub{color:var(--mute);font-size:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:20px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi b{display:block;font-size:28px;line-height:1.2}.kpi span{color:var(--mute);font-size:13px}
+.kpi.red b{color:var(--red)}.kpi.green b{color:var(--green)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;display:flex;margin:10px 0 6px}
+.bar i{display:block;height:100%}.bar .f{background:var(--green)}.bar .g{background:#9aa3b2}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:12px;padding:3px 8px;border-radius:20px;background:var(--bg);border:1px solid var(--line)}
+.chip.ok{background:var(--green-bg);border-color:#bfe3cc}.chip.bad{background:var(--red-bg);border-color:#f3c7c3}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+select,input[type=search]{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+input[type=search]{flex:1;min-width:200px}
+label.cb{font-size:14px;color:var(--mute);display:flex;gap:6px;align-items:center}
+.shop{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.shop>button{all:unset;cursor:pointer;display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;width:100%;padding:12px 16px;box-sizing:border-box}
+.shop>button:hover{background:#fafbfc}
+.dom{font-weight:600}.tag{font-size:11px;color:var(--mute);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:400}
+.cnt{font-size:13px;color:var(--mute);text-align:right}.cnt b{color:var(--ink);font-size:15px}
+.worst{color:var(--red);font-weight:600;min-width:60px;text-align:right}
+.det{display:none;border-top:1px solid var(--line);overflow-x:auto}.shop.open .det{display:block}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mute);font-weight:500;background:#fafbfc}td.name{white-space:normal;min-width:240px}
+td.num{text-align:right}td.neg{color:var(--red);font-weight:600;text-align:right}
+a{color:var(--accent)}.empty{color:var(--mute);padding:24px;text-align:center}
+.foot{color:var(--mute);font-size:12px;margin-top:32px}
+@media(max-width:600px){.shop>button{grid-template-columns:1fr auto}.cnt{display:none}}
+</style></head><body><div class="wrap">
+<h1>Моніторинг дотримання РРЦ</h1>
+<div class="sub" id="sub"></div>
+<div class="kpis" id="kpis"></div>
+<div id="compl"></div>
+<h2>Магазини, що продають нижче РРЦ</h2>
+<div class="filters">
+  <select id="fb"><option value="">Усі бренди</option></select>
+  <input type="search" id="fq" placeholder="Пошук: магазин, код або назва товару">
+  <label class="cb"><input type="checkbox" id="fm"> без маркетплейсів</label>
+</div>
+<div id="list"></div>
+<div class="foot">Ціни перевіряються автоматично щодня (Пн–Пт) на сторінках магазинів. Порушення — ціна нижча за РРЦ постачальника.
+Позначка «за назвою» — на сторінці немає коду товару, товар визначено за моделлю в назві. Посилання веде на сторінку, де знайдено ціну.</div>
+</div>
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbwFwXzC3kOiKnSVoOrKehsx7Pd-xF5gC7zL_Tgz9LF_Iz4ji56jITr-Wx3ofuwUfGgM/exec';
+const K = new URLSearchParams(location.search).get('k') || '';
+function fail(t) { document.getElementById('sub').textContent = t; }
+fail('Завантаження даних…');
+fetch(API + '?format=json&k=' + encodeURIComponent(K))
+  .then(r => r.json())
+  .then(D => { if (D.error) return fail(D.error === 'forbidden' ? 'Доступ заборонено.' : 'Не вдалося зібрати звіт: ' + D.error); start(D); })
+  .catch(() => fail('Не вдалося завантажити дані. Спробуйте оновити сторінку.'));
+function start(D) {
+const $ = id => document.getElementById(id);
+const el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
+const money = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' грн';
+const pct = n => (n > 0 ? '+' : '') + String(n).replace('.', ',') + '%';
+
+$('sub').textContent = 'Постачальник: ' + D.supplier + (D.updated ? ' · дані на ' + D.updated : '');
+
+function kpi(val, label, cls) { const k = el('div', 'kpi' + (cls ? ' ' + cls : '')); k.appendChild(el('b', '', val)); k.appendChild(el('span', '', label)); $('kpis').appendChild(k); }
+kpi(D.kpi.shops, 'магазинів нижче РРЦ' + (D.kpi.shops !== D.kpi.shopsNoMp ? ' (з них маркетплейсів: ' + (D.kpi.shops - D.kpi.shopsNoMp) + ')' : ''), 'red');
+kpi(D.kpi.items, 'товарних позицій нижче РРЦ', 'red');
+kpi(D.kpi.avg ? pct(D.kpi.avg) : '—', 'середнє відхилення від РРЦ');
+kpi(D.kpi.checkedShops, 'магазинів під моніторингом (' + D.kpi.checkedPages + ' сторінок)');
+if (D.kpi.fixed30) kpi(D.kpi.fixed30, 'позицій виправлено за 30 днів', 'green');
+
+if (D.complaints.length) {
+  $('compl').appendChild(el('h2', '', 'Результати звернень до магазинів'));
+  D.complaints.forEach(c => {
+    const card = el('div', 'card');
+    const left = c.total - c.fixed - c.gone;
+    const h = el('div'); h.appendChild(el('b', '', 'Звернення від ' + c.date));
+    if (c.day !== '') h.appendChild(el('span', 'sub', ' · минуло днів: ' + c.day));
+    card.appendChild(h);
+    const bar = el('div', 'bar');
+    const f = el('i', 'f'); f.style.width = (c.total ? c.fixed / c.total * 100 : 0) + '%';
+    const g = el('i', 'g'); g.style.width = (c.total ? c.gone / c.total * 100 : 0) + '%';
+    bar.appendChild(f); bar.appendChild(g); card.appendChild(bar);
+    card.appendChild(el('div', 'sub', 'Виправили ціну: ' + c.fixed + ' з ' + c.total + ' позицій' +
+      (c.gone ? ' · знято з продажу / немає в наявності: ' + c.gone : '') + ' · досі нижче РРЦ: ' + left +
+      ' · магазинів, що виправили все: ' + c.shopsFixed + ' з ' + c.shopsAll));
+    const chips = el('div', 'chips');
+    c.stores.forEach(s => {
+      const done = s.fixed + s.gone === s.all;
+      chips.appendChild(el('span', 'chip ' + (done ? 'ok' : (s.fixed ? '' : 'bad')), s.d + ' ' + s.fixed + '/' + s.all));
+    });
+    card.appendChild(chips);
+    $('compl').appendChild(card);
+  });
+}
+
+const brands = {};
+D.shops.forEach(s => s.items.forEach(i => { if (i.b) brands[i.b] = (brands[i.b] || 0) + 1; }));
+Object.keys(brands).sort().forEach(b => { const o = el('option', '', b + ' (' + brands[b] + ')'); o.value = b; $('fb').appendChild(o); });
+
+function render() {
+  const fb = $('fb').value, q = $('fq').value.trim().toLowerCase(), fm = $('fm').checked;
+  const list = $('list'); list.textContent = '';
+  let shown = 0;
+  D.shops.forEach(s => {
+    if (fm && s.mp) return;
+    let items = s.items.filter(i => !fb || i.b === fb);
+    if (q && s.d.toLowerCase().indexOf(q) < 0) items = items.filter(i => (i.v + ' ' + i.n).toLowerCase().indexOf(q) >= 0);
+    if (!items.length) return;
+    shown++;
+    const box = el('div', 'shop');
+    const btn = el('button');
+    const name = el('div'); name.appendChild(el('span', 'dom', s.d)); if (s.mp) name.appendChild(el('span', 'tag', 'маркетплейс'));
+    if (s.since) name.appendChild(el('div', 'sub', 'порушує щонайменше з ' + s.since));
+    const cnt = el('div', 'cnt'); cnt.appendChild(el('b', '', items.length)); cnt.appendChild(document.createTextNode(' поз.'));
+    btn.appendChild(name); btn.appendChild(cnt); btn.appendChild(el('div', 'worst', pct(items[0].diff)));
+    btn.onclick = () => box.classList.toggle('open');
+    box.appendChild(btn);
+    const det = el('div', 'det'), t = el('table'), hr = el('tr');
+    ['Код', 'Товар', 'Бренд', 'РРЦ', 'Ціна в магазині', 'Відхилення', 'Перевірено', ''].forEach(x => hr.appendChild(el('th', '', x)));
+    t.appendChild(hr);
+    items.forEach(i => {
+      const tr = el('tr');
+      tr.appendChild(el('td', '', i.v));
+      const n = el('td', 'name', i.n); if (i.nm) n.appendChild(el('span', 'tag', 'за назвою')); tr.appendChild(n);
+      tr.appendChild(el('td', '', i.b));
+      tr.appendChild(el('td', 'num', money(i.rrp)));
+      tr.appendChild(el('td', 'num', money(i.p)));
+      tr.appendChild(el('td', 'neg', pct(i.diff)));
+      tr.appendChild(el('td', '', i.at));
+      const l = el('td');
+      if (i.u) { const a = el('a', '', 'сторінка ↗'); a.href = i.u; a.target = '_blank'; a.rel = 'noopener'; l.appendChild(a); }
+      tr.appendChild(l);
+      t.appendChild(tr);
+    });
+    det.appendChild(t); box.appendChild(det); list.appendChild(box);
+  });
+  if (!shown) list.appendChild(el('div', 'empty', 'Порушень не знайдено'));
+}
+['fb', 'fq', 'fm'].forEach(id => $(id).addEventListener('input', render));
+render();
+}
+</script></body></html>
