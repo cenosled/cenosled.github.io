@@ -76,8 +76,8 @@ if (D.complaints.length) {
   D.complaints.forEach(c => {
     const card = el('div', 'card');
     const left = c.total - c.fixed - c.gone;
-    const h = el('div'); h.appendChild(el('b', '', 'Звернення від ' + c.date));
-    if (c.day !== '') h.appendChild(el('span', 'sub', ' · минуло днів: ' + c.day));
+    const h = el('div'); h.appendChild(el('b', '', c.n > 1 ? 'Звернення за ' + c.date + ' (усього ' + c.n + ')' : 'Звернення від ' + c.date));
+    if (c.day !== '') h.appendChild(el('span', 'sub', (c.n > 1 ? ' · від першого минуло днів: ' : ' · минуло днів: ') + c.day));
     card.appendChild(h);
     const bar = el('div', 'bar');
     const f = el('i', 'f'); f.style.width = (c.total ? c.fixed / c.total * 100 : 0) + '%';
