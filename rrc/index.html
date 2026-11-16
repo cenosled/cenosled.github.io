@@ -134,15 +134,15 @@ function downloadCsv(rows, name) {
 }
 // З 16.11.2026: справжній файл Excel (.xlsx) через бібліотеку SheetJS; якщо вона не завантажилась — CSV
 function downloadXlsx(rows, name) {
-  const head = ['Магазин', 'Менеджер', 'Код', 'Товар', 'Бренд', 'РРЦ, грн', 'Ціна в магазині, грн', 'Відхилення, %', 'Перевірено', 'Посилання'];
-  const aoa = [head].concat(rows.map(x => [x.s.d, x.s.mgr || '', x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, x.i.diff, x.i.at, x.i.u]));
+  const head = ['Магазин', 'Юрособа', 'Менеджер', 'Код', 'Товар', 'Бренд', 'РРЦ, грн', 'Ціна в магазині, грн', 'Відхилення, %', 'Перевірено', 'Посилання'];
+  const aoa = [head].concat(rows.map(x => [x.s.d, x.s.legal || '', x.s.mgr || '', x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, x.i.diff, x.i.at, x.i.u]));
   const go = () => {
     const X = window.XLSX;
     const ws = X.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [22, 16, 12, 60, 14, 10, 18, 14, 12, 50].map(w => ({ wch: w }));
+    ws['!cols'] = [22, 34, 16, 12, 60, 14, 10, 18, 14, 12, 50].map(w => ({ wch: w }));
     ws['!autofilter'] = { ref: ws['!ref'] };
     for (let r = 1; r < aoa.length; r++) {
-      const c = ws[X.utils.encode_cell({ r: r, c: 9 })];
+      const c = ws[X.utils.encode_cell({ r: r, c: 10 })];
       if (c && c.v) c.l = { Target: String(c.v) };
     }
     const wb = X.utils.book_new();
@@ -210,6 +210,7 @@ function render() {
     const name = el('div'); name.appendChild(el('span', 'dom', s.d)); if (s.mp) name.appendChild(el('span', 'tag', 'маркетплейс'));
     if (s.mgr) name.appendChild(el('span', 'mgr', s.mgr));
     if (s.since) name.appendChild(el('div', 'sub', 'порушує щонайменше з ' + s.since));
+    if (s.legal) name.appendChild(el('div', 'sub', s.legal));
     if (s.sn) name.appendChild(el('div', 'sub', 'продавець на ' + s.dom));
     if (s.also) name.appendChild(el('div', 'sub', 'той самий магазин: ' + s.also));
     const cnt = el('div', 'cnt'); cnt.appendChild(el('b', '', items.length)); cnt.appendChild(document.createTextNode(' поз.'));
