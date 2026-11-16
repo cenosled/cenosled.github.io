@@ -72,11 +72,11 @@ kpi(D.kpi.checkedShops, 'магазинів під моніторингом (' +
 if (D.kpi.fixed30) kpi(D.kpi.fixed30, 'позицій виправлено за 30 днів', 'green');
 
 if (D.complaints.length) {
-  $('compl').appendChild(el('h2', '', 'Результати звернень до магазинів'));
+  $('compl').appendChild(el('h2', '', 'Результати перевірок'));
   D.complaints.forEach(c => {
     const card = el('div', 'card');
     const left = c.total - c.fixed - c.gone;
-    const h = el('div'); h.appendChild(el('b', '', c.n > 1 ? 'Звернення за ' + c.date + ' (усього ' + c.n + ')' : 'Звернення від ' + c.date));
+    const h = el('div'); h.appendChild(el('b', '', c.n > 1 ? 'Перевірки за ' + c.date + ' (усього ' + c.n + ')' : 'Перевірка від ' + c.date));
     if (c.day !== '') h.appendChild(el('span', 'sub', (c.n > 1 ? ' · від першого минуло днів: ' : ' · минуло днів: ') + c.day));
     card.appendChild(h);
     const bar = el('div', 'bar');
