@@ -116,7 +116,7 @@ function copyText(txt, b) {
   if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(done, fallback); else fallback();
 }
 function letter(s, items) {
-  const L = ['Добрий день!', '', 'На сайті ' + s.d + ' ціни на такі товари нижчі за рекомендовані роздрібні ціни (РРЦ) ' + D.supplier + ':', ''];
+  const L = ['Добрий день!', '', (s.sn ? 'У вашому магазині ' + s.sn + ' на ' + s.dom : 'На сайті ' + s.d) + ' ціни на такі товари нижчі за рекомендовані роздрібні ціни (РРЦ) ' + D.supplier + ':', ''];
   items.forEach((i, k) => {
     L.push((k + 1) + '. ' + i.n + ' (код ' + i.v + ') — ціна ' + money(i.p) + ', РРЦ ' + money(i.rrp) + ' (' + pct(i.diff) + ')');
     if (i.u) L.push('   ' + i.u);
@@ -210,6 +210,8 @@ function render() {
     const name = el('div'); name.appendChild(el('span', 'dom', s.d)); if (s.mp) name.appendChild(el('span', 'tag', 'маркетплейс'));
     if (s.mgr) name.appendChild(el('span', 'mgr', s.mgr));
     if (s.since) name.appendChild(el('div', 'sub', 'порушує щонайменше з ' + s.since));
+    if (s.sn) name.appendChild(el('div', 'sub', 'продавець на ' + s.dom));
+    if (s.also) name.appendChild(el('div', 'sub', 'той самий магазин: ' + s.also));
     const cnt = el('div', 'cnt'); cnt.appendChild(el('b', '', items.length)); cnt.appendChild(document.createTextNode(' поз.'));
     btn.appendChild(name); btn.appendChild(cnt); btn.appendChild(el('div', 'worst', pct(items[0].diff)));
     if (OPEN[s.d]) box.classList.add('open');
@@ -220,8 +222,9 @@ function render() {
     const b1 = el('button', 'btn', 'Скопіювати звернення до магазину');
     b1.onclick = () => copyText(letter(s, items), b1);
     const b2 = el('button', 'btn', 'Завантажити в Excel');
-    b2.onclick = () => downloadXlsx(items.map(i => ({ s: s, i: i })), 'rrc-' + s.d + '-' + today());
+    b2.onclick = () => downloadXlsx(items.map(i => ({ s: s, i: i })), 'rrc-' + s.d.split(' · ').join('-').split(' ').join('-') + '-' + today());
     tools.appendChild(b1); tools.appendChild(b2);
+    if (s.su) { const a = el('a', 'btn', 'Сторінка продавця'); a.href = s.su; a.target = '_blank'; a.rel = 'noopener'; a.style.textDecoration = 'none'; tools.appendChild(a); }
     if (CAN_EDIT) {
       const lab = el('label', 'sub', 'Менеджер:'); lab.style.marginLeft = 'auto'; lab.style.alignSelf = 'center';
       const inp = el('input'); inp.type = 'text'; inp.value = s.mgr || ''; inp.setAttribute('list', 'mgrlist');
