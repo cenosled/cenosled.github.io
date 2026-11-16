@@ -70,6 +70,33 @@ fetch(API + '?format=json&k=' + encodeURIComponent(K))
   .catch(() => fail('Не вдалося завантажити дані. Спробуйте оновити сторінку.'));
 function start(D) {
 const $ = id => document.getElementById(id);
+// З 16.11.2026: кириличні домени (xn--…) показуємо кирилицею
+function pdec_(s) {
+  try {
+    let n = 128, i = 0, bias = 72; const out = [], b = s.lastIndexOf('-');
+    for (let j = 0; j < b; j++) out.push(s.charCodeAt(j));
+    for (let k = b > 0 ? b + 1 : 0; k < s.length;) {
+      const oi = i;
+      for (let w = 1, t = 36; ; t += 36) {
+        const c = s.charCodeAt(k++);
+        const dg = c - 48 < 10 ? c - 22 : c - 65 < 26 ? c - 65 : c - 97 < 26 ? c - 97 : 36;
+        if (dg >= 36 || k > s.length) throw 0;
+        i += dg * w;
+        const tt = t <= bias ? 1 : t >= bias + 26 ? 26 : t - bias;
+        if (dg < tt) break;
+        w *= 36 - tt;
+      }
+      const L = out.length + 1;
+      let d = oi === 0 ? Math.floor((i - oi) / 700) : (i - oi) >> 1, kk = 0;
+      d += Math.floor(d / L);
+      for (; d > 455; kk += 36) d = Math.floor(d / 35);
+      bias = Math.floor(kk + 36 * d / (d + 38));
+      n += Math.floor(i / L); i %= L; out.splice(i++, 0, n);
+    }
+    return String.fromCodePoint.apply(null, out);
+  } catch (e) { return 'xn--' + s; }
+}
+const dn = d => String(d || '').split('.').map(l => /^xn--/i.test(l) ? pdec_(l.slice(4).toLowerCase()) : l).join('.');
 const el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
 const money = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' грн';
 const pct = n => (n > 0 ? '+' : '') + String(n).replace('.', ',') + '%';
@@ -151,7 +178,7 @@ if (D.complaints.length) {
     card.appendChild(el('div', 'sub', 'На плашці: скільки позицій магазин виправив і скільки зараз нижче РРЦ. Зелений — зараз порушень немає; сірий — частину виправив, але ще є нижче РРЦ; червоний — нічого не виправив. 🔁 повторно — після виправлення знову знизив ціну. На смузі: зелене — виправлено, сіре — прибрали з продажу, решта — зараз нижче РРЦ.'));
     const note = el('div', 'sub');
     c.stores.forEach(s => {
-      const t = s.d + (s.fixed ? ' · виправив ' + s.fixed : '') + (s.gone ? ' · прибрав ' + s.gone : '') + (s.now ? ' · нижче РРЦ ' + s.now : '');
+      const t = dn(s.d) + (s.fixed ? ' · виправив ' + s.fixed : '') + (s.gone ? ' · прибрав ' + s.gone : '') + (s.now ? ' · нижче РРЦ ' + s.now : '');
       const ch = el('span', 'chip link ' + (!s.now ? 'ok' : (s.fixed || s.gone ? '' : 'bad')), t);
       ch.title = 'Показати позиції магазину нижче';
       const rp = D.rep && D.rep[String(s.d).toLowerCase()];
@@ -178,7 +205,7 @@ function copyText(txt, b) {
   if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(done, fallback); else fallback();
 }
 function letter(s, items) {
-  const L = ['Добрий день!', '', (s.sn ? 'У вашому магазині ' + s.sn + ' на ' + s.dom : 'На сайті ' + s.d) + ' ціни на такі товари нижчі за рекомендовані роздрібні ціни (РРЦ) ' + D.supplier + ':', ''];
+  const L = ['Добрий день!', '', (s.sn ? 'У вашому магазині ' + s.sn + ' на ' + s.dom : 'На сайті ' + dn(s.d)) + ' ціни на такі товари нижчі за рекомендовані роздрібні ціни (РРЦ) ' + D.supplier + ':', ''];
   items.forEach((i, k) => {
     L.push((k + 1) + '. ' + i.n + ' (код ' + i.v + ') — ціна ' + money(i.p) + ', РРЦ ' + money(i.rrp) + ' (' + pct(i.diff) + ')');
     if (i.u) L.push('   ' + i.u);
@@ -189,7 +216,7 @@ function letter(s, items) {
 function downloadCsv(rows, name) {
   const q = v => { v = String(v === undefined || v === null ? '' : v); return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
   const head = ['Магазин', 'Менеджер', 'Код', 'Товар', 'Бренд', 'РРЦ', 'Ціна в магазині', 'Відхилення %', 'Перевірено', 'Посилання'];
-  const lines = [head].concat(rows.map(x => [x.s.d, x.s.mgr, x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, String(x.i.diff).replace('.', ','), x.i.at, x.i.u]));
+  const lines = [head].concat(rows.map(x => [dn(x.s.d), x.s.mgr, x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, String(x.i.diff).replace('.', ','), x.i.at, x.i.u]));
   const text = String.fromCharCode(0xFEFF) + lines.map(r => r.map(q).join(';')).join('\r\n');
   const a = el('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' })); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
@@ -197,7 +224,7 @@ function downloadCsv(rows, name) {
 // З 16.11.2026: справжній файл Excel (.xlsx) через бібліотеку SheetJS; якщо вона не завантажилась — CSV
 function downloadXlsx(rows, name) {
   const head = ['Магазин', 'Юрособа', 'Менеджер', 'Код', 'Товар', 'Бренд', 'РРЦ, грн', 'Ціна в магазині, грн', 'Відхилення, %', 'Перевірено', 'Посилання'];
-  const aoa = [head].concat(rows.map(x => [x.s.d, x.s.legal || '', x.s.mgr || '', x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, x.i.diff, x.i.at, x.i.u]));
+  const aoa = [head].concat(rows.map(x => [dn(x.s.d), x.s.legal || '', x.s.mgr || '', x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, x.i.diff, x.i.at, x.i.u]));
   const go = () => {
     const X = window.XLSX;
     const ws = X.utils.aoa_to_sheet(aoa);
@@ -259,8 +286,8 @@ function showShop(d, note) {
   d = String(d).toLowerCase();
   const hit = D.shops.filter(x => String(x.dom || x.d).toLowerCase() === d || x.d.toLowerCase() === d);
   note.textContent = '';
-  if (!hit.length) { note.textContent = d + ' — зараз у списку порушників немає: усі позиції виправлено або знято з продажу.'; return; }
-  $('fg').value = ''; $('fb').value = ''; $('fm').checked = false; $('fq').value = d;
+  if (!hit.length) { note.textContent = dn(d) + ' — зараз у списку порушників немає: усі позиції виправлено або знято з продажу.'; return; }
+  $('fg').value = ''; $('fb').value = ''; $('fm').checked = false; $('fq').value = dn(d);
   hit.forEach(x => { OPEN[x.d] = true; });
   render();
   const first = document.querySelector('#list .shop');
@@ -278,13 +305,13 @@ function render() {
     if (fm && s.mp) return;
     if (fg && (fg === '__none' ? s.mgr : s.mgr !== fg)) return;
     let items = s.items.filter(i => !fb || i.b === fb);
-    if (q && s.d.toLowerCase().indexOf(q) < 0) items = items.filter(i => (i.v + ' ' + i.n).toLowerCase().indexOf(q) >= 0);
+    if (q && s.d.toLowerCase().indexOf(q) < 0 && dn(s.d).toLowerCase().indexOf(q) < 0) items = items.filter(i => (i.v + ' ' + i.n).toLowerCase().indexOf(q) >= 0);
     if (!items.length) return;
     shown++;
     items.forEach(i => CUR.push({ s: s, i: i }));
     const box = el('div', 'shop');
     const btn = el('button');
-    const name = el('div'); name.appendChild(el('span', 'dom', s.d)); if (s.mp) name.appendChild(el('span', 'tag', 'маркетплейс'));
+    const name = el('div'); name.appendChild(el('span', 'dom', dn(s.d))); if (s.mp) name.appendChild(el('span', 'tag', 'маркетплейс'));
     if (s.rep) name.appendChild(el('span', 'tag rep', 'повторно'));
     if (s.mgr) name.appendChild(el('span', 'mgr', s.mgr));
     if (s.rep) name.appendChild(el('div', 'sub', 'після виправлення знову знизив ціну: ' + s.rep.n + ' поз.' + (s.rep.same ? ' (з них ' + s.rep.same + ' — ті самі товари)' : '') + ', останній раз ' + s.rep.last));
