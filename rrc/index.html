@@ -52,7 +52,7 @@ a{color:var(--accent)}.empty{color:var(--mute);padding:24px;text-align:center}
 </div>
 <div id="list"></div>
 <div class="foot">Ціни перевіряються автоматично щодня (Пн–Пт) на сторінках магазинів. Порушення — ціна нижча за РРЦ постачальника.
-Позначка «за назвою» — на сторінці немає коду товару, товар визначено за моделлю в назві. Посилання веде на сторінку, де знайдено ціну.</div>
+Позначка «за назвою» — на сторінці немає коду товару, товар визначено за моделлю в назві. Позначка «Hotline» — ціну магазину знайдено на Hotline.ua. Посилання веде на сторінку, де знайдено ціну.</div>
 </div>
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbwFwXzC3kOiKnSVoOrKehsx7Pd-xF5gC7zL_Tgz9LF_Iz4ji56jITr-Wx3ofuwUfGgM/exec';
@@ -77,7 +77,6 @@ kpi(D.kpi.items, 'товарних позицій нижче РРЦ', 'red');
 kpi(D.kpi.avg ? pct(D.kpi.avg) : '—', 'середнє відхилення від РРЦ');
 kpi(D.kpi.checkedShops, 'магазинів під моніторингом (' + D.kpi.checkedPages + ' сторінок)');
 if (D.kpi.fixed30) kpi(D.kpi.fixed30, 'позицій виправлено за 30 днів', 'green');
-if (D.kpi.gap) kpi(money(D.kpi.gap), 'сума заниження цін (по 1 шт. кожної позиції)', 'red');
 
 // З 16.11.2026: динаміка — щоденні знімки (лист «Динаміка») і виправлення по тижнях
 (function dyn() {
@@ -92,7 +91,7 @@ if (D.kpi.gap) kpi(money(D.kpi.gap), 'сума заниження цін (по 1
     if (ago && ago !== cur) {
       const dd = (a, b, f) => { const v = a - b; return v === 0 ? 'без змін' : (v < 0 ? '▼ ' : '▲ ') + f(Math.abs(v)); };
       card.appendChild(el('div', '', 'Порівняно з ' + ago.d + ': магазинів-порушників ' + dd(cur.s, ago.s, String) +
-        ', позицій ' + dd(cur.i, ago.i, String) + ', сума заниження ' + dd(cur.g, ago.g, money) + '.'));
+        ', позицій ' + dd(cur.i, ago.i, String) + '.'));
     }
   }
   const NS = 'http' + '://www.w3.org/2000/svg';
@@ -290,7 +289,7 @@ function render() {
     items.forEach(i => {
       const tr = el('tr');
       tr.appendChild(el('td', '', i.v));
-      const n = el('td', 'name', i.n); if (i.nm) n.appendChild(el('span', 'tag', 'за назвою')); tr.appendChild(n);
+      const n = el('td', 'name', i.n); if (i.nm) n.appendChild(el('span', 'tag', 'за назвою')); if (i.hl) n.appendChild(el('span', 'tag', 'Hotline')); tr.appendChild(n);
       tr.appendChild(el('td', '', i.b));
       tr.appendChild(el('td', 'num', money(i.rrp)));
       tr.appendChild(el('td', 'num', money(i.p)));
