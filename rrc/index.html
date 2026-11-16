@@ -33,6 +33,7 @@ a{color:var(--accent)}.empty{color:var(--mute);padding:24px;text-align:center}
 .foot{color:var(--mute);font-size:12px;margin-top:32px}
 .btn{font:inherit;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer}
 .btn:hover{background:#f0f2f5}.tools{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);background:#fafbfc}
+.mgrin{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;width:180px}
 .mgr{font-size:11px;color:var(--accent);border:1px solid #c9d5f5;border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:400}
 @media(max-width:600px){.shop>button{grid-template-columns:1fr auto}.cnt{display:none}}
 </style></head><body><div class="wrap">
@@ -131,17 +132,61 @@ function downloadCsv(rows, name) {
   const a = el('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' })); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
 }
+// З 16.11.2026: справжній файл Excel (.xlsx) через бібліотеку SheetJS; якщо вона не завантажилась — CSV
+function downloadXlsx(rows, name) {
+  const head = ['Магазин', 'Менеджер', 'Код', 'Товар', 'Бренд', 'РРЦ, грн', 'Ціна в магазині, грн', 'Відхилення, %', 'Перевірено', 'Посилання'];
+  const aoa = [head].concat(rows.map(x => [x.s.d, x.s.mgr || '', x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, x.i.diff, x.i.at, x.i.u]));
+  const go = () => {
+    const X = window.XLSX;
+    const ws = X.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [22, 16, 12, 60, 14, 10, 18, 14, 12, 50].map(w => ({ wch: w }));
+    ws['!autofilter'] = { ref: ws['!ref'] };
+    for (let r = 1; r < aoa.length; r++) {
+      const c = ws[X.utils.encode_cell({ r: r, c: 9 })];
+      if (c && c.v) c.l = { Target: String(c.v) };
+    }
+    const wb = X.utils.book_new();
+    X.utils.book_append_sheet(wb, ws, 'Порушення');
+    X.writeFile(wb, name + '.xlsx');
+  };
+  if (window.XLSX) return go();
+  const sc = el('script');
+  sc.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  sc.onload = go;
+  sc.onerror = () => downloadCsv(rows, name + '.csv');
+  document.head.appendChild(sc);
+}
 const today = () => { const d = new Date(); return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear(); };
 let CUR = [];
-const mgrs = {};
-D.shops.forEach(s => { if (s.mgr) mgrs[s.mgr] = (mgrs[s.mgr] || 0) + 1; });
-if (Object.keys(mgrs).length) {
-  $('fg').style.display = '';
-  Object.keys(mgrs).sort().forEach(m => { const o = el('option', '', m + ' (' + mgrs[m] + ')'); o.value = m; $('fg').appendChild(o); });
-  let pm = ''; try { pm = new URLSearchParams(location.search).get('m') || ''; } catch (e) {}
-  if (pm && mgrs[pm]) $('fg').value = pm;
+const OPEN = {};
+const CAN_EDIT = typeof API !== 'undefined';     // редагування — лише на сторінці cenosled.cz/rrc/
+const dl = el('datalist'); dl.id = 'mgrlist'; document.body.appendChild(dl);
+function buildMgrs(first) {
+  const mgrs = {};
+  D.shops.forEach(s => { if (s.mgr) mgrs[s.mgr] = (mgrs[s.mgr] || 0) + 1; });
+  const keep = $('fg').value;
+  while ($('fg').options.length > 2) $('fg').remove(2);
+  dl.textContent = '';
+  Object.keys(mgrs).sort().forEach(m => {
+    const o = el('option', '', m + ' (' + mgrs[m] + ')'); o.value = m; $('fg').appendChild(o);
+    const d = el('option'); d.value = m; dl.appendChild(d);
+  });
+  $('fg').style.display = Object.keys(mgrs).length ? '' : 'none';
+  if (first) { let pm = ''; try { pm = new URLSearchParams(location.search).get('m') || ''; } catch (e) {} if (pm && mgrs[pm]) $('fg').value = pm; }
+  else $('fg').value = (keep === '__none' || mgrs[keep]) ? keep : '';
 }
-$('csv').onclick = () => downloadCsv(CUR, 'rrc-porushennia-' + today() + '.csv');
+buildMgrs(true);
+function saveMgr(s, val, b) {
+  b.disabled = true; b.textContent = 'Зберігаю…';
+  fetch(API + '?format=json&action=setmgr&k=' + encodeURIComponent(K) + '&d=' + encodeURIComponent(s.d) + '&m=' + encodeURIComponent(val))
+    .then(r => r.json())
+    .then(r => {
+      if (r.error) throw new Error(r.error);
+      s.mgr = r.m; buildMgrs(false); render();
+    })
+    .catch(() => { b.disabled = false; b.textContent = 'Помилка — спробуйте ще'; });
+}
+$('csv').onclick = () => downloadXlsx(CUR, 'rrc-porushennia-' + today());
 
 const brands = {};
 D.shops.forEach(s => s.items.forEach(i => { if (i.b) brands[i.b] = (brands[i.b] || 0) + 1; }));
@@ -167,15 +212,26 @@ function render() {
     if (s.since) name.appendChild(el('div', 'sub', 'порушує щонайменше з ' + s.since));
     const cnt = el('div', 'cnt'); cnt.appendChild(el('b', '', items.length)); cnt.appendChild(document.createTextNode(' поз.'));
     btn.appendChild(name); btn.appendChild(cnt); btn.appendChild(el('div', 'worst', pct(items[0].diff)));
-    btn.onclick = () => box.classList.toggle('open');
+    if (OPEN[s.d]) box.classList.add('open');
+    btn.onclick = () => { box.classList.toggle('open'); OPEN[s.d] = box.classList.contains('open'); };
     box.appendChild(btn);
     const det = el('div', 'det'), t = el('table'), hr = el('tr');
     const tools = el('div', 'tools');
     const b1 = el('button', 'btn', 'Скопіювати звернення до магазину');
     b1.onclick = () => copyText(letter(s, items), b1);
     const b2 = el('button', 'btn', 'Завантажити в Excel');
-    b2.onclick = () => downloadCsv(items.map(i => ({ s: s, i: i })), 'rrc-' + s.d + '-' + today() + '.csv');
-    tools.appendChild(b1); tools.appendChild(b2); det.appendChild(tools);
+    b2.onclick = () => downloadXlsx(items.map(i => ({ s: s, i: i })), 'rrc-' + s.d + '-' + today());
+    tools.appendChild(b1); tools.appendChild(b2);
+    if (CAN_EDIT) {
+      const lab = el('label', 'sub', 'Менеджер:'); lab.style.marginLeft = 'auto'; lab.style.alignSelf = 'center';
+      const inp = el('input'); inp.type = 'text'; inp.value = s.mgr || ''; inp.setAttribute('list', 'mgrlist');
+      inp.placeholder = 'ім’я менеджера'; inp.maxLength = 60; inp.className = 'mgrin';
+      const b3 = el('button', 'btn', 'Зберегти');
+      b3.onclick = () => saveMgr(s, inp.value.trim(), b3);
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') b3.click(); });
+      tools.appendChild(lab); tools.appendChild(inp); tools.appendChild(b3);
+    }
+    det.appendChild(tools);
     ['Код', 'Товар', 'Бренд', 'РРЦ', 'Ціна в магазині', 'Відхилення', 'Перевірено', ''].forEach(x => hr.appendChild(el('th', '', x)));
     t.appendChild(hr);
     items.forEach(i => {
