@@ -25,6 +25,7 @@ label.cb{font-size:14px;color:var(--mute);display:flex;gap:6px;align-items:cente
 .shop>button{all:unset;cursor:pointer;display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;width:100%;padding:12px 16px;box-sizing:border-box}
 .shop>button:hover{background:#fafbfc}
 .dom{font-weight:600}.tag{font-size:11px;color:var(--mute);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:400}
+.tag.rep{background:#d93025;border-color:#d93025;color:#fff;font-weight:600}.chip .rp{color:#d93025;font-weight:600;margin-left:4px}
 .cnt{font-size:13px;color:var(--mute);text-align:right}.cnt b{color:var(--ink);font-size:15px}
 .worst{color:var(--red);font-weight:600;min-width:60px;text-align:right}
 .det{display:none;border-top:1px solid var(--line);overflow-x:auto}.shop.open .det{display:block}
@@ -79,6 +80,7 @@ kpi(D.kpi.items, 'товарних позицій нижче РРЦ', 'red');
 kpi(D.kpi.avg ? pct(D.kpi.avg) : '—', 'середнє відхилення від РРЦ');
 kpi(D.kpi.checkedShops, 'магазинів під моніторингом (' + D.kpi.checkedPages + ' сторінок)');
 if (D.kpi.fixed30) kpi(D.kpi.fixed30, 'позицій виправлено за 30 днів', 'green');
+if (D.kpi.repeat) kpi(D.kpi.repeat, 'магазинів знову знизили ціну після виправлення', 'red');
 
 // З 16.11.2026: динаміка — щоденні знімки (лист «Динаміка») і виправлення по тижнях
 (function dyn() {
@@ -145,12 +147,14 @@ if (D.complaints.length) {
       (c.gone ? ' · знято з продажу / немає в наявності: ' + c.gone : '') + ' · досі нижче РРЦ: ' + left +
       ' · магазинів, що виправили все: ' + c.shopsFixed + ' з ' + c.shopsAll));
     const chips = el('div', 'chips');
-    card.appendChild(el('div', 'sub', 'Зелений — магазин виправив або зняв з продажу всі позиції; сірий — виправив частину; червоний — не виправив жодної. На смузі: зелене — виправлено, сіре — знято з продажу.'));
+    card.appendChild(el('div', 'sub', 'Зелений — магазин виправив або зняв з продажу всі позиції; сірий — виправив частину; червоний — не виправив жодної; 🔁 повторно — після виправлення знову знизив ціну. На смузі: зелене — виправлено, сіре — знято з продажу.'));
     const note = el('div', 'sub');
     c.stores.forEach(s => {
       const done = s.fixed + s.gone === s.all;
       const ch = el('span', 'chip link ' + (done ? 'ok' : (s.fixed ? '' : 'bad')), s.d + ' ' + s.fixed + '/' + s.all + (s.gone ? ' · знято ' + s.gone : ''));
       ch.title = 'Показати позиції магазину нижче';
+      const rp = D.rep && D.rep[String(s.d).toLowerCase()];
+      if (rp) { ch.appendChild(el('span', 'rp', '🔁 повторно')); ch.title = 'Після виправлення знову знизив ціну (' + rp.n + ' поз., останній раз ' + rp.last + '). ' + ch.title; }
       ch.onclick = () => showShop(s.d, note);           // з 16.11.2026: клік — до магазину у списку нижче
       chips.appendChild(ch);
     });
@@ -280,7 +284,9 @@ function render() {
     const box = el('div', 'shop');
     const btn = el('button');
     const name = el('div'); name.appendChild(el('span', 'dom', s.d)); if (s.mp) name.appendChild(el('span', 'tag', 'маркетплейс'));
+    if (s.rep) name.appendChild(el('span', 'tag rep', 'повторно'));
     if (s.mgr) name.appendChild(el('span', 'mgr', s.mgr));
+    if (s.rep) name.appendChild(el('div', 'sub', 'після виправлення знову знизив ціну: ' + s.rep.n + ' поз.' + (s.rep.same ? ' (з них ' + s.rep.same + ' — ті самі товари)' : '') + ', останній раз ' + s.rep.last));
     if (s.since) name.appendChild(el('div', 'sub', 'порушує щонайменше з ' + s.since));
     if (s.legal) name.appendChild(el('div', 'sub', s.legal));
     if (s.sn) name.appendChild(el('div', 'sub', 'продавець на ' + s.dom));
