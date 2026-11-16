@@ -15,6 +15,8 @@ h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:32px 0 12px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chip{font-size:12px;padding:3px 8px;border-radius:20px;background:var(--bg);border:1px solid var(--line)}
 .chip.ok{background:var(--green-bg);border-color:#bfe3cc}.chip.bad{background:var(--red-bg);border-color:#f3c7c3}
+.chip.link{cursor:pointer}.chip.link:hover{border-color:#8b93a3;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.shop.flash{box-shadow:0 0 0 3px #f2c94c;transition:box-shadow .3s}
 .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
 select,input[type=search]{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
 input[type=search]{flex:1;min-width:200px}
@@ -144,11 +146,16 @@ if (D.complaints.length) {
       ' · магазинів, що виправили все: ' + c.shopsFixed + ' з ' + c.shopsAll));
     const chips = el('div', 'chips');
     card.appendChild(el('div', 'sub', 'Зелений — магазин виправив або зняв з продажу всі позиції; сірий — виправив частину; червоний — не виправив жодної. На смузі: зелене — виправлено, сіре — знято з продажу.'));
+    const note = el('div', 'sub');
     c.stores.forEach(s => {
       const done = s.fixed + s.gone === s.all;
-      chips.appendChild(el('span', 'chip ' + (done ? 'ok' : (s.fixed ? '' : 'bad')), s.d + ' ' + s.fixed + '/' + s.all + (s.gone ? ' · знято ' + s.gone : '')));
+      const ch = el('span', 'chip link ' + (done ? 'ok' : (s.fixed ? '' : 'bad')), s.d + ' ' + s.fixed + '/' + s.all + (s.gone ? ' · знято ' + s.gone : ''));
+      ch.title = 'Показати позиції магазину нижче';
+      ch.onclick = () => showShop(s.d, note);           // з 16.11.2026: клік — до магазину у списку нижче
+      chips.appendChild(ch);
     });
     card.appendChild(chips);
+    card.appendChild(note);
     $('compl').appendChild(card);
   });
 }
@@ -242,6 +249,21 @@ const brands = {};
 D.shops.forEach(s => s.items.forEach(i => { if (i.b) brands[i.b] = (brands[i.b] || 0) + 1; }));
 Object.keys(brands).sort().forEach(b => { const o = el('option', '', b + ' (' + brands[b] + ')'); o.value = b; $('fb').appendChild(o); });
 
+// З 16.11.2026: показати магазин зі звернень у списку нижче (відкритим), якщо він ще порушує
+function showShop(d, note) {
+  d = String(d).toLowerCase();
+  const hit = D.shops.filter(x => String(x.dom || x.d).toLowerCase() === d || x.d.toLowerCase() === d);
+  note.textContent = '';
+  if (!hit.length) { note.textContent = d + ' — зараз у списку порушників немає: усі позиції виправлено або знято з продажу.'; return; }
+  $('fg').value = ''; $('fb').value = ''; $('fm').checked = false; $('fq').value = d;
+  hit.forEach(x => { OPEN[x.d] = true; });
+  render();
+  const first = document.querySelector('#list .shop');
+  if (first) {
+    first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('#list .shop').forEach(b => { b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 1600); });
+  }
+}
 function render() {
   const fb = $('fb').value, q = $('fq').value.trim().toLowerCase(), fm = $('fm').checked, fg = $('fg').value;
   const list = $('list'); list.textContent = '';
