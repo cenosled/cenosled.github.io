@@ -112,12 +112,14 @@ if (D.kpi.fixed30) kpi(D.kpi.fixed30, 'позицій виправлено за 
     card.appendChild(el('div', 'sub', 'Щоденна статистика збирається з 16.11.2026 — графік по днях з’явиться за кілька днів.'));
   }
   if (F.length) {
-    card.appendChild(el('div', 'sub', 'Скільки позицій магазини виправили — по тижнях (тиждень з понеділка)'));
+    card.appendChild(el('div', 'sub', 'Скільки позицій магазини виправили — по тижнях (тиждень з понеділка). Сірі — до звернень постачальника, зелені — після звернень.'));
     const W = 680, H = 170, P = 24, s = svg(W, H);
     const max = Math.max.apply(null, F.map(x => x.n)) || 1, bw = (W - 2 * P) / F.length;
     F.forEach((x, k) => {
       const h = (H - 2 * P - 10) * x.n / max, x0 = P + k * bw;
-      s.appendChild(node('rect', { x: x0 + bw * 0.15, y: H - P - h, width: bw * 0.7, height: h, rx: 3, fill: '#1f8a4c' }));
+      s.appendChild(node('rect', { x: x0 + bw * 0.15, y: H - P - h, width: bw * 0.7, height: h, rx: 3, fill: x.after ? '#1f8a4c' : '#b4bac6' }));
+      if (k && x.after && !F[k - 1].after) s.appendChild(node('line', { x1: x0, y1: 8, x2: x0, y2: H - P, stroke: '#9aa3b2', 'stroke-dasharray': '4 3' }));
+      if (k && x.after && !F[k - 1].after) s.appendChild(node('text', { x: x0 + 4, y: 16, 'font-size': 11, fill: '#6b7383' }, 'перші звернення'));
       s.appendChild(node('text', { x: x0 + bw / 2, y: H - P - h - 4, 'font-size': 11, 'text-anchor': 'middle', fill: '#1d2330' }, x.n));
       s.appendChild(node('text', { x: x0 + bw / 2, y: H - 6, 'font-size': 11, 'text-anchor': 'middle', fill: '#6b7383' }, x.w));
     });
