@@ -14,7 +14,7 @@ h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:32px 0 12px}
 .bar i{display:block;height:100%}.bar .f{background:var(--green)}.bar .g{background:#f2c94c}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chip{font-size:12px;padding:3px 8px;border-radius:20px;background:var(--bg);border:1px solid var(--line)}
-.chip.ok{background:var(--green-bg);border-color:#bfe3cc}.chip.bad{background:var(--red-bg);border-color:#f3c7c3}
+.chip.ok{background:var(--green-bg);border-color:#bfe3cc}.chip.part{background:#fdf5d6;border-color:#f0dc8f}.chip.bad{background:var(--red-bg);border-color:#f3c7c3}
 .chip.link{cursor:pointer}.chip.link:hover{border-color:#8b93a3;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .shop.flash{box-shadow:0 0 0 3px #f2c94c;transition:box-shadow .3s}
 .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
@@ -175,11 +175,11 @@ if (D.complaints.length) {
       (c.gone ? ' · прибрали з продажу / немає в наявності: ' + c.gone : '') + ' · зараз нижче РРЦ: ' + c.now + ' поз.' +
       ' · магазинів без порушень зараз: ' + c.shopsClean + ' з ' + c.shopsAll));
     const chips = el('div', 'chips');
-    card.appendChild(el('div', 'sub', 'На плашці: скільки позицій магазин виправив і скільки зараз нижче РРЦ. Зелений — зараз порушень немає; сірий — частину виправив, але ще є нижче РРЦ; червоний — нічого не виправив. 🔁 повторно — після виправлення знову знизив ціну. На смузі: зелене — виправлено, жовте — прибрали з продажу, червоне — зараз нижче РРЦ.'));
+    card.appendChild(el('div', 'sub', 'На плашці: скільки позицій магазин виправив і скільки зараз нижче РРЦ. Зелений — зараз порушень немає; жовтий — частину виправив, але ще є нижче РРЦ; червоний — нічого не виправив. 🔁 повторно — після виправлення знову знизив ціну. На смузі: зелене — виправлено, жовте — прибрали з продажу, червоне — зараз нижче РРЦ.'));
     const note = el('div', 'sub');
     c.stores.forEach(s => {
       const t = dn(s.d) + (s.fixed ? ' · виправив ' + s.fixed : '') + (s.gone ? ' · прибрав ' + s.gone : '') + (s.now ? ' · нижче РРЦ ' + s.now : '');
-      const ch = el('span', 'chip link ' + (!s.now ? 'ok' : (s.fixed || s.gone ? '' : 'bad')), t);
+      const ch = el('span', 'chip link ' + (!s.now ? 'ok' : (s.fixed || s.gone ? 'part' : 'bad')), t);
       ch.title = 'Показати позиції магазину нижче';
       const rp = D.rep && D.rep[String(s.d).toLowerCase()];
       if (rp) { ch.appendChild(el('span', 'rp', '🔁 повторно')); ch.title = 'Після виправлення знову знизив ціну (' + rp.n + ' поз., останній раз ' + rp.last + '). ' + ch.title; }
