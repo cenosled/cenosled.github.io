@@ -139,7 +139,6 @@ if (D.complaints.length) {
     const card = el('div', 'card');
     const total = c.fixed + c.gone + c.now;
     const h = el('div'); h.appendChild(el('b', '', 'Зараз' + (D.updated ? ', ' + D.updated : '')));
-    if (c.since) h.appendChild(el('span', 'sub', ' · перші звернення ' + c.since + (c.day !== '' ? ' (днів: ' + c.day + ')' : '')));
     card.appendChild(h);
     const bar = el('div', 'bar');
     const f = el('i', 'f'); f.style.width = (total ? c.fixed / total * 100 : 0) + '%';
