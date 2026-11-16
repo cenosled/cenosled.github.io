@@ -31,6 +31,9 @@ th{color:var(--mute);font-weight:500;background:#fafbfc}td.name{white-space:norm
 td.num{text-align:right}td.neg{color:var(--red);font-weight:600;text-align:right}
 a{color:var(--accent)}.empty{color:var(--mute);padding:24px;text-align:center}
 .foot{color:var(--mute);font-size:12px;margin-top:32px}
+.btn{font:inherit;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer}
+.btn:hover{background:#f0f2f5}.tools{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);background:#fafbfc}
+.mgr{font-size:11px;color:var(--accent);border:1px solid #c9d5f5;border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:400}
 @media(max-width:600px){.shop>button{grid-template-columns:1fr auto}.cnt{display:none}}
 </style></head><body><div class="wrap">
 <h1>Моніторинг дотримання РРЦ</h1>
@@ -39,9 +42,11 @@ a{color:var(--accent)}.empty{color:var(--mute);padding:24px;text-align:center}
 <div id="compl"></div>
 <h2>Магазини, що продають нижче РРЦ</h2>
 <div class="filters">
+  <select id="fg" style="display:none"><option value="">Усі менеджери</option><option value="__none">Без менеджера</option></select>
   <select id="fb"><option value="">Усі бренди</option></select>
   <input type="search" id="fq" placeholder="Пошук: магазин, код або назва товару">
   <label class="cb"><input type="checkbox" id="fm"> без маркетплейсів</label>
+  <button class="btn" id="csv">Завантажити в Excel</button>
 </div>
 <div id="list"></div>
 <div class="foot">Ціни перевіряються автоматично щодня (Пн–Пт) на сторінках магазинів. Порушення — ціна нижча за РРЦ постачальника.
@@ -97,29 +102,80 @@ if (D.complaints.length) {
   });
 }
 
+// З 16.11.2026: звернення до магазину, вивантаження в Excel (CSV), менеджери
+function copyText(txt, b) {
+  const old = b.textContent;
+  const done = () => { b.textContent = 'Скопійовано ✓'; setTimeout(() => { b.textContent = old; }, 1500); };
+  const fallback = () => {
+    const ta = el('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { b.textContent = 'Не вдалося скопіювати'; }
+    ta.remove();
+  };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(done, fallback); else fallback();
+}
+function letter(s, items) {
+  const L = ['Добрий день!', '', 'На сайті ' + s.d + ' ціни на такі товари нижчі за рекомендовані роздрібні ціни (РРЦ) ' + D.supplier + ':', ''];
+  items.forEach((i, k) => {
+    L.push((k + 1) + '. ' + i.n + ' (код ' + i.v + ') — ціна ' + money(i.p) + ', РРЦ ' + money(i.rrp) + ' (' + pct(i.diff) + ')');
+    if (i.u) L.push('   ' + i.u);
+  });
+  L.push('', 'Просимо привести ціни у відповідність до РРЦ.', '', 'Дякуємо!');
+  return L.join('\n');
+}
+function downloadCsv(rows, name) {
+  const q = v => { v = String(v === undefined || v === null ? '' : v); return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const head = ['Магазин', 'Менеджер', 'Код', 'Товар', 'Бренд', 'РРЦ', 'Ціна в магазині', 'Відхилення %', 'Перевірено', 'Посилання'];
+  const lines = [head].concat(rows.map(x => [x.s.d, x.s.mgr, x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, String(x.i.diff).replace('.', ','), x.i.at, x.i.u]));
+  const text = String.fromCharCode(0xFEFF) + lines.map(r => r.map(q).join(';')).join('\r\n');
+  const a = el('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' })); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+const today = () => { const d = new Date(); return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear(); };
+let CUR = [];
+const mgrs = {};
+D.shops.forEach(s => { if (s.mgr) mgrs[s.mgr] = (mgrs[s.mgr] || 0) + 1; });
+if (Object.keys(mgrs).length) {
+  $('fg').style.display = '';
+  Object.keys(mgrs).sort().forEach(m => { const o = el('option', '', m + ' (' + mgrs[m] + ')'); o.value = m; $('fg').appendChild(o); });
+  let pm = ''; try { pm = new URLSearchParams(location.search).get('m') || ''; } catch (e) {}
+  if (pm && mgrs[pm]) $('fg').value = pm;
+}
+$('csv').onclick = () => downloadCsv(CUR, 'rrc-porushennia-' + today() + '.csv');
+
 const brands = {};
 D.shops.forEach(s => s.items.forEach(i => { if (i.b) brands[i.b] = (brands[i.b] || 0) + 1; }));
 Object.keys(brands).sort().forEach(b => { const o = el('option', '', b + ' (' + brands[b] + ')'); o.value = b; $('fb').appendChild(o); });
 
 function render() {
-  const fb = $('fb').value, q = $('fq').value.trim().toLowerCase(), fm = $('fm').checked;
+  const fb = $('fb').value, q = $('fq').value.trim().toLowerCase(), fm = $('fm').checked, fg = $('fg').value;
   const list = $('list'); list.textContent = '';
   let shown = 0;
+  CUR = [];
   D.shops.forEach(s => {
     if (fm && s.mp) return;
+    if (fg && (fg === '__none' ? s.mgr : s.mgr !== fg)) return;
     let items = s.items.filter(i => !fb || i.b === fb);
     if (q && s.d.toLowerCase().indexOf(q) < 0) items = items.filter(i => (i.v + ' ' + i.n).toLowerCase().indexOf(q) >= 0);
     if (!items.length) return;
     shown++;
+    items.forEach(i => CUR.push({ s: s, i: i }));
     const box = el('div', 'shop');
     const btn = el('button');
     const name = el('div'); name.appendChild(el('span', 'dom', s.d)); if (s.mp) name.appendChild(el('span', 'tag', 'маркетплейс'));
+    if (s.mgr) name.appendChild(el('span', 'mgr', s.mgr));
     if (s.since) name.appendChild(el('div', 'sub', 'порушує щонайменше з ' + s.since));
     const cnt = el('div', 'cnt'); cnt.appendChild(el('b', '', items.length)); cnt.appendChild(document.createTextNode(' поз.'));
     btn.appendChild(name); btn.appendChild(cnt); btn.appendChild(el('div', 'worst', pct(items[0].diff)));
     btn.onclick = () => box.classList.toggle('open');
     box.appendChild(btn);
     const det = el('div', 'det'), t = el('table'), hr = el('tr');
+    const tools = el('div', 'tools');
+    const b1 = el('button', 'btn', 'Скопіювати звернення до магазину');
+    b1.onclick = () => copyText(letter(s, items), b1);
+    const b2 = el('button', 'btn', 'Завантажити в Excel');
+    b2.onclick = () => downloadCsv(items.map(i => ({ s: s, i: i })), 'rrc-' + s.d + '-' + today() + '.csv');
+    tools.appendChild(b1); tools.appendChild(b2); det.appendChild(tools);
     ['Код', 'Товар', 'Бренд', 'РРЦ', 'Ціна в магазині', 'Відхилення', 'Перевірено', ''].forEach(x => hr.appendChild(el('th', '', x)));
     t.appendChild(hr);
     items.forEach(i => {
@@ -140,7 +196,7 @@ function render() {
   });
   if (!shown) list.appendChild(el('div', 'empty', 'Порушень не знайдено'));
 }
-['fb', 'fq', 'fm'].forEach(id => $(id).addEventListener('input', render));
+['fg', 'fb', 'fq', 'fm'].forEach(id => $(id).addEventListener('input', render));
 render();
 }
 </script></body></html>
