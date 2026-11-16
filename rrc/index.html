@@ -10,7 +10,7 @@ h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:32px 0 12px}
 .kpi b{display:block;font-size:28px;line-height:1.2}.kpi span{color:var(--mute);font-size:13px}
 .kpi.red b{color:var(--red)}.kpi.green b{color:var(--green)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
-.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;display:flex;margin:10px 0 6px}
+.bar{height:10px;background:#e5675e;border-radius:6px;overflow:hidden;display:flex;margin:10px 0 6px}
 .bar i{display:block;height:100%}.bar .f{background:var(--green)}.bar .g{background:#9aa3b2}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chip{font-size:12px;padding:3px 8px;border-radius:20px;background:var(--bg);border:1px solid var(--line)}
@@ -175,7 +175,7 @@ if (D.complaints.length) {
       (c.gone ? ' · прибрали з продажу / немає в наявності: ' + c.gone : '') + ' · зараз нижче РРЦ: ' + c.now + ' поз.' +
       ' · магазинів без порушень зараз: ' + c.shopsClean + ' з ' + c.shopsAll));
     const chips = el('div', 'chips');
-    card.appendChild(el('div', 'sub', 'На плашці: скільки позицій магазин виправив і скільки зараз нижче РРЦ. Зелений — зараз порушень немає; сірий — частину виправив, але ще є нижче РРЦ; червоний — нічого не виправив. 🔁 повторно — після виправлення знову знизив ціну. На смузі: зелене — виправлено, сіре — прибрали з продажу, решта — зараз нижче РРЦ.'));
+    card.appendChild(el('div', 'sub', 'На плашці: скільки позицій магазин виправив і скільки зараз нижче РРЦ. Зелений — зараз порушень немає; сірий — частину виправив, але ще є нижче РРЦ; червоний — нічого не виправив. 🔁 повторно — після виправлення знову знизив ціну. На смузі: зелене — виправлено, сіре — прибрали з продажу, червоне — зараз нижче РРЦ.'));
     const note = el('div', 'sub');
     c.stores.forEach(s => {
       const t = dn(s.d) + (s.fixed ? ' · виправив ' + s.fixed : '') + (s.gone ? ' · прибрав ' + s.gone : '') + (s.now ? ' · нижче РРЦ ' + s.now : '');
