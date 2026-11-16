@@ -144,14 +144,15 @@ if (D.complaints.length) {
     const g = el('i', 'g'); g.style.width = (c.total ? c.gone / c.total * 100 : 0) + '%';
     bar.appendChild(f); bar.appendChild(g); card.appendChild(bar);
     card.appendChild(el('div', 'sub', 'Виправили ціну: ' + c.fixed + ' з ' + c.total + ' позицій' +
-      (c.gone ? ' · знято з продажу / немає в наявності: ' + c.gone : '') + ' · досі нижче РРЦ: ' + left +
-      ' · магазинів, що виправили все: ' + c.shopsFixed + ' з ' + c.shopsAll));
+      (c.gone ? ' · у магазині немає в наявності / сторінку знято: ' + c.gone : '') + ' · досі нижче РРЦ: ' + left +
+      ' · магазинів, що виправили все: ' + c.shopsFixed + ' з ' + c.shopsAll +
+      (c.sup ? ' · ще ' + c.sup + ' поз. закінчились у ' + D.supplier + ' — не враховуються' : '')));
     const chips = el('div', 'chips');
-    card.appendChild(el('div', 'sub', 'Зелений — магазин виправив або зняв з продажу всі позиції; сірий — виправив частину; червоний — не виправив жодної; 🔁 повторно — після виправлення знову знизив ціну. На смузі: зелене — виправлено, сіре — знято з продажу.'));
+    card.appendChild(el('div', 'sub', 'Зелений — магазин виправив ціну або прибрав товар (немає в наявності / сторінку знято) по всіх позиціях; сірий — виправив частину; червоний — не виправив жодної; 🔁 повторно — після виправлення знову знизив ціну. На смузі: зелене — виправлено, сіре — у магазині немає в наявності або сторінку знято. Позиції, яких зараз немає у ' + D.supplier + ', не враховуються.'));
     const note = el('div', 'sub');
     c.stores.forEach(s => {
       const done = s.fixed + s.gone === s.all;
-      const ch = el('span', 'chip link ' + (done ? 'ok' : (s.fixed ? '' : 'bad')), s.d + ' ' + s.fixed + '/' + s.all + (s.gone ? ' · знято ' + s.gone : ''));
+      const ch = el('span', 'chip link ' + (done ? 'ok' : (s.fixed ? '' : 'bad')), s.d + ' ' + s.fixed + '/' + s.all + (s.gone ? ' · немає ' + s.gone : ''));
       ch.title = 'Показати позиції магазину нижче';
       const rp = D.rep && D.rep[String(s.d).toLowerCase()];
       if (rp) { ch.appendChild(el('span', 'rp', '🔁 повторно')); ch.title = 'Після виправлення знову знизив ціну (' + rp.n + ' поз., останній раз ' + rp.last + '). ' + ch.title; }
