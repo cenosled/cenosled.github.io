@@ -36,9 +36,10 @@ a{color:var(--accent)}.empty{color:var(--mute);padding:24px;text-align:center}
 .foot{color:var(--mute);font-size:12px;margin-top:32px}
 .btn{font:inherit;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer}
 .btn:hover{background:#f0f2f5}.tools{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);background:#fafbfc}
-.mgrin{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;width:180px}
+.mgrin{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;width:180px;min-width:0}
+.mgrbox{display:flex;gap:8px;align-items:center;margin-left:auto}
 .mgr{font-size:11px;color:var(--accent);border:1px solid #c9d5f5;border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:400}
-@media(max-width:600px){.shop>button{grid-template-columns:1fr auto}.cnt{display:none}}
+@media(max-width:600px){.shop>button{grid-template-columns:1fr auto}.cnt{display:none}.mgrbox{margin-left:0;width:100%}.mgrin{flex:1;width:auto}}
 </style></head><body><div class="wrap">
 <h1>Моніторинг дотримання РРЦ</h1>
 <div class="sub" id="sub"></div>
@@ -306,13 +307,13 @@ function render() {
     tools.appendChild(b1); tools.appendChild(b2);
     if (s.su) { const a = el('a', 'btn', 'Сторінка продавця'); a.href = s.su; a.target = '_blank'; a.rel = 'noopener'; a.style.textDecoration = 'none'; tools.appendChild(a); }
     if (CAN_EDIT) {
-      const lab = el('label', 'sub', 'Менеджер:'); lab.style.marginLeft = 'auto'; lab.style.alignSelf = 'center';
+      const box = el('div', 'mgrbox'), lab = el('label', 'sub', 'Менеджер:');
       const inp = el('input'); inp.type = 'text'; inp.value = s.mgr || ''; inp.setAttribute('list', 'mgrlist');
       inp.placeholder = 'ім’я менеджера'; inp.maxLength = 60; inp.className = 'mgrin';
       const b3 = el('button', 'btn', 'Зберегти');
       b3.onclick = () => saveMgr(s, inp.value.trim(), b3);
       inp.addEventListener('keydown', e => { if (e.key === 'Enter') b3.click(); });
-      tools.appendChild(lab); tools.appendChild(inp); tools.appendChild(b3);
+      box.appendChild(lab); box.appendChild(inp); box.appendChild(b3); tools.appendChild(box);
     }
     det.appendChild(tools);
     ['Код', 'Товар', 'Бренд', 'РРЦ', 'Ціна в магазині', 'Відхилення', 'Перевірено', ''].forEach(x => hr.appendChild(el('th', '', x)));
