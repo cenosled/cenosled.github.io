@@ -215,23 +215,23 @@ function letter(s, items) {
 }
 function downloadCsv(rows, name) {
   const q = v => { v = String(v === undefined || v === null ? '' : v); return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-  const head = ['Магазин', 'Менеджер', 'Код', 'Товар', 'Бренд', 'РРЦ', 'Ціна в магазині', 'Відхилення %', 'Перевірено', 'Посилання'];
-  const lines = [head].concat(rows.map(x => [dn(x.s.d), x.s.mgr, x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, String(x.i.diff).replace('.', ','), x.i.at, x.i.u]));
+  const head = ['Магазин', 'Менеджер', 'Код', 'Товар', 'Бренд', 'РРЦ', 'Ціна в магазині', 'Відхилення %', 'Нижче РРЦ з', 'Перевірено', 'Посилання'];
+  const lines = [head].concat(rows.map(x => [dn(x.s.d), x.s.mgr, x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, String(x.i.diff).replace('.', ','), x.i.since || '', x.i.at, x.i.u]));
   const text = String.fromCharCode(0xFEFF) + lines.map(r => r.map(q).join(';')).join('\r\n');
   const a = el('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' })); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
 }
 // З 16.11.2026: справжній файл Excel (.xlsx) через бібліотеку SheetJS; якщо вона не завантажилась — CSV
 function downloadXlsx(rows, name) {
-  const head = ['Магазин', 'Юрособа', 'Менеджер', 'Код', 'Товар', 'Бренд', 'РРЦ, грн', 'Ціна в магазині, грн', 'Відхилення, %', 'Перевірено', 'Посилання'];
-  const aoa = [head].concat(rows.map(x => [dn(x.s.d), x.s.legal || '', x.s.mgr || '', x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, x.i.diff, x.i.at, x.i.u]));
+  const head = ['Магазин', 'Юрособа', 'Менеджер', 'Код', 'Товар', 'Бренд', 'РРЦ, грн', 'Ціна в магазині, грн', 'Відхилення, %', 'Нижче РРЦ з', 'Перевірено', 'Посилання'];
+  const aoa = [head].concat(rows.map(x => [dn(x.s.d), x.s.legal || '', x.s.mgr || '', x.i.v, x.i.n, x.i.b, x.i.rrp, x.i.p, x.i.diff, x.i.since || '', x.i.at, x.i.u]));
   const go = () => {
     const X = window.XLSX;
     const ws = X.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [22, 34, 16, 12, 60, 14, 10, 18, 14, 12, 50].map(w => ({ wch: w }));
+    ws['!cols'] = [22, 34, 16, 12, 60, 14, 10, 18, 14, 13, 12, 50].map(w => ({ wch: w }));
     ws['!autofilter'] = { ref: ws['!ref'] };
     for (let r = 1; r < aoa.length; r++) {
-      const c = ws[X.utils.encode_cell({ r: r, c: 10 })];
+      const c = ws[X.utils.encode_cell({ r: r, c: 11 })];
       if (c && c.v) c.l = { Target: String(c.v) };
     }
     const wb = X.utils.book_new();
@@ -245,6 +245,10 @@ function downloadXlsx(rows, name) {
   sc.onerror = () => downloadCsv(rows, name + '.csv');
   document.head.appendChild(sc);
 }
+// З 16.11.2026: «нижче РРЦ з» → «12.11 · 4 дн.»
+const sinceTxt = d => { const m = String(d || '').match(/(\d{2})\.(\d{2})\.(\d{4})/); if (!m) return '—';
+  const days = Math.max(0, Math.floor((Date.now() - new Date(+m[3], +m[2] - 1, +m[1]).getTime()) / 864e5));
+  return m[1] + '.' + m[2] + ' · ' + days + ' дн.'; };
 const today = () => { const d = new Date(); return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear(); };
 let CUR = [];
 const OPEN = {};
@@ -342,7 +346,7 @@ function render() {
       box.appendChild(lab); box.appendChild(inp); box.appendChild(b3); tools.appendChild(box);
     }
     det.appendChild(tools);
-    ['Код', 'Товар', 'Бренд', 'РРЦ', 'Ціна в магазині', 'Відхилення', 'Перевірено', ''].forEach(x => hr.appendChild(el('th', '', x)));
+    ['Код', 'Товар', 'Бренд', 'РРЦ', 'Ціна в магазині', 'Відхилення', 'Нижче РРЦ з', 'Перевірено', ''].forEach(x => hr.appendChild(el('th', '', x)));
     t.appendChild(hr);
     items.forEach(i => {
       const tr = el('tr');
@@ -352,6 +356,7 @@ function render() {
       tr.appendChild(el('td', 'num', money(i.rrp)));
       tr.appendChild(el('td', 'num', money(i.p)));
       tr.appendChild(el('td', 'neg', pct(i.diff)));
+      tr.appendChild(el('td', 'since', sinceTxt(i.since)));
       tr.appendChild(el('td', '', i.at));
       const l = el('td');
       if (i.u) { const a = el('a', '', 'сторінка ↗'); a.href = i.u; a.target = '_blank'; a.rel = 'noopener'; l.appendChild(a); }
