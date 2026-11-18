@@ -229,7 +229,7 @@ if (D.complaints.length) {
       (c.gone ? ' · прибрали з продажу / немає в наявності: ' + c.gone : '') + ' · зараз нижче РРЦ: ' + c.now + ' поз.' +
       ' · магазинів без порушень зараз: ' + c.shopsClean + ' з ' + c.shopsAll));
     const chips = el('div', 'chips');
-    card.appendChild(el('div', 'sub', 'На плашці: скільки позицій магазин виправив і скільки зараз нижче РРЦ. Зелений — зараз порушень немає; жовтий — частину виправив, але ще є нижче РРЦ; червоний — нічого не виправив. 🔁 повторно — після виправлення знову знизив ціну; у списку позицій магазину такі товари позначені: «🔁 знову знизив» — ту саму позицію, яку виправляв, «нове після виправлень» — іншу, що раніше була в нормі. На смузі: зелене — виправлено, жовте — прибрали з продажу, червоне — зараз нижче РРЦ.'));
+    card.appendChild(el('div', 'sub', 'На плашці: скільки позицій магазин виправив і скільки зараз нижче РРЦ. Зелений — зараз порушень немає; жовтий — частину виправив, але ще є нижче РРЦ; червоний — нічого не виправив. 🔁 повторно — магазин виправив позицію, а потім знову опустив її ціну нижче РРЦ; у списку позицій вона позначена «🔁 знову знизив». На смузі: зелене — виправлено, жовте — прибрали з продажу, червоне — зараз нижче РРЦ.'));
     const note = el('div', 'sub');
     c.stores.forEach(s => {
       const t = dn(s.d) + (s.fixed ? ' · виправив ' + s.fixed : '') + (s.gone ? ' · прибрав ' + s.gone : '') + (s.now ? ' · нижче РРЦ ' + s.now : '');
@@ -372,7 +372,7 @@ function render() {
     const name = el('div'); name.appendChild(el('span', 'dom', dn(s.d))); if (s.mp) name.appendChild(el('span', 'tag', 'маркетплейс'));
     if (s.rep) name.appendChild(el('span', 'tag rep', 'повторно'));
     if (s.mgr) name.appendChild(el('span', 'mgr', s.mgr));
-    if (s.rep) name.appendChild(el('div', 'sub', 'після виправлення знову знизив ціну: ' + s.rep.n + ' поз.' + (s.rep.same ? ' (з них ' + s.rep.same + ' — ті самі товари)' : '') + ', останній раз ' + s.rep.last));
+    if (s.rep) name.appendChild(el('div', 'sub', 'після виправлення знову знизив ціну: ' + s.rep.n + ' поз., останній раз ' + s.rep.last));
     if (s.since) name.appendChild(el('div', 'sub', 'порушує щонайменше з ' + s.since));
     if (s.legal) name.appendChild(el('div', 'sub', s.legal));
     if (s.sn) name.appendChild(el('div', 'sub', 'продавець на ' + s.dom));
@@ -408,7 +408,6 @@ function render() {
       const n = el('td', 'name', i.n); if (i.nm) n.appendChild(el('span', 'tag', 'за назвою')); if (i.hl) n.appendChild(el('span', 'tag', 'Hotline'));
       // з 18.11.2026: повторне порушення на рівні позиції
       if (i.rp === 'same') { const tg = el('span', 'tag rep', '🔁 знову знизив'); tg.title = 'Цю позицію магазин виправляв' + (i.rpFix ? ' ' + i.rpFix : '') + ', а ' + i.rpAt + ' знову опустив ціну нижче РРЦ'; n.appendChild(tg); }
-      else if (i.rp === 'other') { const tg = el('span', 'tag rep2', 'нове після виправлень'); tg.title = 'Раніше ціна на цю позицію була в нормі; ' + i.rpAt + ' магазин опустив її нижче РРЦ — уже після того, як виправляв інші позиції'; n.appendChild(tg); }
       tr.appendChild(n);
       tr.appendChild(el('td', '', i.b));
       tr.appendChild(el('td', 'num', money(i.rrp)));
