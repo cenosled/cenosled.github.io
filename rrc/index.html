@@ -39,9 +39,19 @@ a{color:var(--accent)}.empty{color:var(--mute);padding:24px;text-align:center}
 .mgrin{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;width:180px;min-width:0}
 .mgrbox{display:flex;gap:8px;align-items:center;margin-left:auto}
 .mgr{font-size:11px;color:var(--accent);border:1px solid #c9d5f5;border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:400}
+.promo{background:#fff4d6;border:1px solid #f0c75e;border-radius:12px;padding:14px 16px;margin:0 0 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.promo .pt{flex:1 1 380px}.promo b{font-size:16px}.promo .tm{font-variant-numeric:tabular-nums;font-weight:700;color:#b5470b}
+.promo .pa{display:flex;gap:8px;flex-wrap:wrap}
+.bp{font:inherit;font-size:14px;font-weight:600;padding:9px 14px;border-radius:8px;border:1px solid #1d2330;background:#1d2330;color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
+.bp.ghost{background:#fff;color:#1d2330}.bp:hover{opacity:.9}
+.closed{max-width:560px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:32px 24px}
+.closed h1{margin-bottom:10px}.closed p{color:var(--mute);margin:0 0 20px}
 @media(max-width:600px){.shop>button{grid-template-columns:1fr auto}.cnt{display:none}.mgrbox{margin-left:0;width:100%}.mgrin{flex:1;width:auto}
   #fq{order:-1;flex:1 1 100%;min-width:0;box-sizing:border-box}.filters select{flex:1 1 40%;min-width:0}}
 </style></head><body><div class="wrap">
+<div class="promo" id="promo" style="display:none"><div class="pt"><b>Безкоштовний доступ до звіту діє до 20:00 (за Києвом) 18 листопада.</b> Залишилось: <span class="tm" id="tm"></span><br>
+<span class="sub">Збережіть поточний стан порушень РРЦ або оформіть підписку, щоб звіт оновлювався щодня.</span></div>
+<div class="pa"><button class="bp" id="pdl">Завантажити звіт в Excel</button><a class="bp ghost" id="psub" href="#">Оформити підписку</a></div></div>
 <h1>Моніторинг дотримання РРЦ</h1>
 <div class="sub" id="sub"></div>
 <div class="kpis" id="kpis"></div>
@@ -63,13 +73,57 @@ a{color:var(--accent)}.empty{color:var(--mute);padding:24px;text-align:center}
 const API = 'https://script.google.com/macros/s/AKfycbwFwXzC3kOiKnSVoOrKehsx7Pd-xF5gC7zL_Tgz9LF_Iz4ji56jITr-Wx3ofuwUfGgM/exec';
 const K = new URLSearchParams(location.search).get('k') || '';
 function fail(t) { document.getElementById('sub').textContent = t; }
-fail('Завантаження даних…');
-fetch(API + '?format=json&k=' + encodeURIComponent(K))
-  .then(r => r.json())
-  .then(D => { if (D.error) return fail(D.error === 'forbidden' ? 'Доступ заборонено.' : 'Не вдалося зібрати звіт: ' + D.error); start(D); })
-  .catch(() => fail('Не вдалося завантажити дані. Спробуйте оновити сторінку.'));
+// З 18.11.2026: безкоштовний доступ до 18.11.2026 20:00 за Києвом; власник відкриває за посиланням з &o=…
+const DEADLINE = new Date('2026-11-18T20:00:00+02:00').getTime();
+const SUB_MAIL = 'mailto:info@safecity.in.ua?subject=' + encodeURIComponent('Підписка на звіт «Моніторинг дотримання РРЦ»') +
+  '&body=' + encodeURIComponent('Добрий день!\n\nХочемо оформити підписку на щоденний звіт про порушення РРЦ.\n\nКомпанія:\nКонтактна особа:\nТелефон:\n');
+const OWNER_HASH = '8c84c1b3afaacc1d372f7320b42c9ace41eab94a3e78dc6fc6dd312b7e1f654c';
+function isOwner_() {
+  const o = new URLSearchParams(location.search).get('o') || '';
+  if (!o || !window.crypto || !crypto.subtle) return Promise.resolve(false);
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(o))
+    .then(b => Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join('') === OWNER_HASH)
+    .catch(() => false);
+}
+function closePage_() {
+  const w = document.querySelector('.wrap'); w.textContent = '';
+  const c = document.createElement('div'); c.className = 'closed';
+  const h = document.createElement('h1'); h.textContent = 'Безкоштовний доступ завершено'; c.appendChild(h);
+  const p = document.createElement('p');
+  p.textContent = 'Безкоштовний доступ до звіту «Моніторинг дотримання РРЦ» діяв до 20:00 (за Києвом) 18 листопада. Щоб і далі щодня бачити магазини, що продають нижче РРЦ, оформіть підписку.';
+  c.appendChild(p);
+  const a = document.createElement('a'); a.className = 'bp'; a.href = SUB_MAIL; a.textContent = 'Оформити підписку'; c.appendChild(a);
+  const m = document.createElement('p'); m.style.marginTop = '14px'; m.style.marginBottom = '0';
+  m.textContent = 'Або напишіть на info@safecity.in.ua'; c.appendChild(m);
+  w.appendChild(c);
+}
+let OWNER = false;
+isOwner_().then(own => {
+  OWNER = own;
+  if (!OWNER && Date.now() >= DEADLINE) return closePage_();
+  fail('Завантаження даних…');
+  fetch(API + '?format=json&k=' + encodeURIComponent(K))
+    .then(r => r.json())
+    .then(D => { if (D.error) return fail(D.error === 'forbidden' ? 'Доступ заборонено.' : 'Не вдалося зібрати звіт: ' + D.error); start(D); })
+    .catch(() => fail('Не вдалося завантажити дані. Спробуйте оновити сторінку.'));
+});
 function start(D) {
 const $ = id => document.getElementById(id);
+// З 18.11.2026: плашка з таймером до кінця безкоштовного доступу
+(function promo() {
+  if (Date.now() >= DEADLINE) return;              // сюди після дедлайну потрапляє лише власник — без плашки
+  $('promo').style.display = '';
+  $('psub').href = SUB_MAIL;
+  $('pdl').onclick = () => { const all = []; D.shops.forEach(s => s.items.forEach(i => all.push({ s: s, i: i }))); downloadXlsx(all, 'rrc-porushennia-' + today()); };
+  const two = n => String(n).padStart(2, '0');
+  const tick = () => {
+    const left = DEADLINE - Date.now();
+    if (left <= 0) { clearInterval(tm); if (OWNER) $('promo').style.display = 'none'; else closePage_(); return; }
+    const s = Math.floor(left / 1000);
+    $('tm').textContent = two(Math.floor(s / 3600)) + ':' + two(Math.floor(s / 60) % 60) + ':' + two(s % 60);
+  };
+  const tm = setInterval(tick, 1000); tick();
+})();
 // З 16.11.2026: кириличні домени (xn--…) показуємо кирилицею
 function pdec_(s) {
   try {
