@@ -25,7 +25,7 @@ label.cb{font-size:14px;color:var(--mute);display:flex;gap:6px;align-items:cente
 .shop>button{all:unset;cursor:pointer;display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;width:100%;padding:12px 16px;box-sizing:border-box}
 .shop>button:hover{background:#fafbfc}
 .dom{font-weight:600}.tag{font-size:11px;color:var(--mute);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-left:6px;font-weight:400}
-.tag.rep{background:#d93025;border-color:#d93025;color:#fff;font-weight:600}.chip .rp{color:#d93025;font-weight:600;margin-left:4px}
+.tag.rep{background:#d93025;border-color:#d93025;color:#fff;font-weight:600}.tag.rep2{border-color:#d93025;color:#d93025;font-weight:600}tr.rpsame td{background:#fdecea}.chip .rp{color:#d93025;font-weight:600;margin-left:4px}
 .cnt{font-size:13px;color:var(--mute);text-align:right}.cnt b{color:var(--ink);font-size:15px}
 .worst{color:var(--red);font-weight:600;min-width:60px;text-align:right}
 .det{display:none;border-top:1px solid var(--line);overflow-x:auto}.shop.open .det{display:block}
@@ -229,7 +229,7 @@ if (D.complaints.length) {
       (c.gone ? ' · прибрали з продажу / немає в наявності: ' + c.gone : '') + ' · зараз нижче РРЦ: ' + c.now + ' поз.' +
       ' · магазинів без порушень зараз: ' + c.shopsClean + ' з ' + c.shopsAll));
     const chips = el('div', 'chips');
-    card.appendChild(el('div', 'sub', 'На плашці: скільки позицій магазин виправив і скільки зараз нижче РРЦ. Зелений — зараз порушень немає; жовтий — частину виправив, але ще є нижче РРЦ; червоний — нічого не виправив. 🔁 повторно — після виправлення знову знизив ціну. На смузі: зелене — виправлено, жовте — прибрали з продажу, червоне — зараз нижче РРЦ.'));
+    card.appendChild(el('div', 'sub', 'На плашці: скільки позицій магазин виправив і скільки зараз нижче РРЦ. Зелений — зараз порушень немає; жовтий — частину виправив, але ще є нижче РРЦ; червоний — нічого не виправив. 🔁 повторно — після виправлення знову знизив ціну; у списку позицій магазину такі товари позначені: «🔁 знову знизив» — ту саму позицію, яку виправляв, «нове після виправлень» — іншу, що раніше була в нормі. На смузі: зелене — виправлено, жовте — прибрали з продажу, червоне — зараз нижче РРЦ.'));
     const note = el('div', 'sub');
     c.stores.forEach(s => {
       const t = dn(s.d) + (s.fixed ? ' · виправив ' + s.fixed : '') + (s.gone ? ' · прибрав ' + s.gone : '') + (s.now ? ' · нижче РРЦ ' + s.now : '');
@@ -403,9 +403,13 @@ function render() {
     ['Код', 'Товар', 'Бренд', 'РРЦ', 'Ціна в магазині', 'Відхилення', 'Нижче РРЦ з', 'Перевірено', ''].forEach(x => hr.appendChild(el('th', '', x)));
     t.appendChild(hr);
     items.forEach(i => {
-      const tr = el('tr');
+      const tr = el('tr', i.rp === 'same' ? 'rpsame' : '');
       tr.appendChild(el('td', '', i.v));
-      const n = el('td', 'name', i.n); if (i.nm) n.appendChild(el('span', 'tag', 'за назвою')); if (i.hl) n.appendChild(el('span', 'tag', 'Hotline')); tr.appendChild(n);
+      const n = el('td', 'name', i.n); if (i.nm) n.appendChild(el('span', 'tag', 'за назвою')); if (i.hl) n.appendChild(el('span', 'tag', 'Hotline'));
+      // з 18.11.2026: повторне порушення на рівні позиції
+      if (i.rp === 'same') { const tg = el('span', 'tag rep', '🔁 знову знизив'); tg.title = 'Цю позицію магазин виправляв' + (i.rpFix ? ' ' + i.rpFix : '') + ', а ' + i.rpAt + ' знову опустив ціну нижче РРЦ'; n.appendChild(tg); }
+      else if (i.rp === 'other') { const tg = el('span', 'tag rep2', 'нове після виправлень'); tg.title = 'Раніше ціна на цю позицію була в нормі; ' + i.rpAt + ' магазин опустив її нижче РРЦ — уже після того, як виправляв інші позиції'; n.appendChild(tg); }
+      tr.appendChild(n);
       tr.appendChild(el('td', '', i.b));
       tr.appendChild(el('td', 'num', money(i.rrp)));
       tr.appendChild(el('td', 'num', money(i.p)));
