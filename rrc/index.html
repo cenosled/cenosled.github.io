@@ -73,8 +73,9 @@ a{color:var(--accent)}.empty{color:var(--mute);padding:24px;text-align:center}
 const API = 'https://script.google.com/macros/s/AKfycbwFwXzC3kOiKnSVoOrKehsx7Pd-xF5gC7zL_Tgz9LF_Iz4ji56jITr-Wx3ofuwUfGgM/exec';
 const K = new URLSearchParams(location.search).get('k') || '';
 function fail(t) { document.getElementById('sub').textContent = t; }
-// З 18.11.2026: безкоштовний доступ до 18.11.2026 20:00 за Києвом; власник відкриває за посиланням з &o=…
-const DEADLINE = new Date('2026-11-18T20:00:00+02:00').getTime();
+// З 18.11.2026: безкоштовний доступ обмежений у часі; власник відкриває за посиланням з &o=…
+// З 19.11.2026: доступ відновлено на місяць — до кінця 19.12.2026 за Києвом
+const DEADLINE = new Date('2026-12-20T00:00:00+02:00').getTime();
 const SUB_MAIL = 'mailto:info@safecity.in.ua?subject=' + encodeURIComponent('Підписка на звіт «Моніторинг дотримання РРЦ»') +
   '&body=' + encodeURIComponent('Добрий день!\n\nХочемо оформити підписку на щоденний звіт про порушення РРЦ.\n\nКомпанія:\nКонтактна особа:\nТелефон:\n');
 const OWNER_HASH = '8c84c1b3afaacc1d372f7320b42c9ace41eab94a3e78dc6fc6dd312b7e1f654c';
@@ -90,7 +91,7 @@ function closePage_() {
   const c = document.createElement('div'); c.className = 'closed';
   const h = document.createElement('h1'); h.textContent = 'Безкоштовний доступ завершено'; c.appendChild(h);
   const p = document.createElement('p');
-  p.textContent = 'Безкоштовний доступ до звіту «Моніторинг дотримання РРЦ» діяв до 20:00 (за Києвом) 18 листопада. Щоб і далі щодня бачити магазини, що продають нижче РРЦ, оформіть підписку.';
+  p.textContent = 'Безкоштовний доступ до звіту «Моніторинг дотримання РРЦ» діяв до 19 грудня. Щоб і далі щодня бачити магазини, що продають нижче РРЦ, оформіть підписку.';
   c.appendChild(p);
   const a = document.createElement('a'); a.className = 'bp'; a.href = SUB_MAIL; a.textContent = 'Оформити підписку'; c.appendChild(a);
   const m = document.createElement('p'); m.style.marginTop = '14px'; m.style.marginBottom = '0';
@@ -111,6 +112,7 @@ function start(D) {
 const $ = id => document.getElementById(id);
 // З 18.11.2026: плашка з таймером до кінця безкоштовного доступу
 (function promo() {
+  return;                                          // з 19.11.2026: плашку з кнопкою підписки не показуємо
   if (Date.now() >= DEADLINE) return;              // сюди після дедлайну потрапляє лише власник — без плашки
   $('promo').style.display = '';
   $('psub').href = SUB_MAIL;
