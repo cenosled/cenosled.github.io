@@ -1,0 +1,206 @@
+<!DOCTYPE html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>Ціни ринку</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mute:#6b7383;--line:#e4e7ec;--red:#c8372d;--red-bg:#fdeceb;--green:#1f8a4c;--green-bg:#e7f5ec;--accent:#2f5bd3;--amber:#b7791f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:20px;margin:0 0 2px}h3{font-size:15px;margin:22px 0 10px}
+.sub{color:var(--mute);font-size:14px}
+.prod{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:20px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:16px}
+.kpi{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi b{display:block;font-size:24px;line-height:1.2}.kpi span{color:var(--mute);font-size:13px}
+.kpi.red b{color:var(--red)}.kpi.green b{color:var(--green)}
+.verdict{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:14px}
+.verdict.ok{background:var(--green-bg)}.verdict.bad{background:var(--red-bg)}.verdict.mid{background:#fdf5d6}
+.strip{position:relative;height:74px;margin:8px 6px 0}
+.strip .axis{position:absolute;left:0;right:0;top:34px;height:2px;background:var(--line)}
+.strip .dot{position:absolute;top:28px;width:14px;height:14px;margin-left:-7px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);cursor:pointer}
+.strip .dot.below{background:var(--red)}.strip .dot.ok{background:#7d8597}
+.strip .rrp{position:absolute;top:10px;bottom:16px;width:2px;background:var(--accent)}
+.strip .rrp span{position:absolute;top:-12px;left:6px;font-size:12px;color:var(--accent);white-space:nowrap;font-weight:600}
+.strip .lab{position:absolute;bottom:0;font-size:12px;color:var(--mute)}
+svg text{font:12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;fill:var(--mute)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--mute);margin-top:4px}
+.legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.filters{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:8px}
+label.cb{font-size:14px;color:var(--mute);display:flex;gap:6px;align-items:center}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+th{color:var(--mute);font-weight:500;background:#fafbfc}td.num{text-align:right}td.neg{color:var(--red);font-weight:600;text-align:right}td.pos{color:var(--green);text-align:right}
+tr.sup td{background:#eef2fc}tr.flash td{background:#fff3c4}
+td.t{white-space:normal;min-width:220px;color:var(--mute);font-size:12px}
+.tag{font-size:11px;color:var(--mute);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-left:6px}
+a{color:var(--accent)}.empty{color:var(--mute);padding:20px;text-align:center}
+.btn{font:inherit;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer}
+.btn:hover{background:#f0f2f5}
+.foot{color:var(--mute);font-size:12px;margin-top:32px}
+</style></head><body><div class="wrap">
+<h1>Ціни ринку</h1>
+<div class="sub" id="sub">Завантаження даних…</div>
+<div id="list"></div>
+<div class="foot">Ціни збираються автоматично щодня (Пн–Пт) з усіх українських інтернет-магазинів, які знайдено в Google, Google Покупках, на Hotline і маркетплейсах (Prom, Rozetka та ін.).
+Кожну сторінку перевірено: на ній саме цей товар (інші версії, комплекти та аксесуари відкинуто), ціна в гривнях. Для маркетплейсів кожен продавець рахується окремо. Посилання веде на сторінку, де знайдено ціну.</div>
+</div>
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbwFwXzC3kOiKnSVoOrKehsx7Pd-xF5gC7zL_Tgz9LF_Iz4ji56jITr-Wx3ofuwUfGgM/exec';
+const K = new URLSearchParams(location.search).get('k') || '';
+const $ = id => document.getElementById(id);
+function el(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+const fmt = n => Math.round(n).toLocaleString('uk-UA') + ' ₴';
+const pct = n => (n > 0 ? '+' : '') + String(n).replace('.', ',') + ' %';
+const SUPPLIER_DOM = 'triniti-sb.com.ua';
+
+fetch(API + '?format=json&action=market&k=' + encodeURIComponent(K))
+  .then(r => r.json())
+  .then(D => {
+    if (D.error) return $('sub').textContent = D.error === 'forbidden' ? 'Доступ заборонено.' : 'Не вдалося зібрати дані: ' + D.error;
+    $('sub').textContent = (D.supplier ? 'Для ' + D.supplier + ' · ' : '') + (D.updated ? 'оновлено ' + D.updated : 'ще не перевірялось');
+    if (!D.products.length) $('list').appendChild(el('div', 'empty', 'Товарів для відстеження ще немає.'));
+    D.products.forEach(product);
+  })
+  .catch(() => $('sub').textContent = 'Не вдалося завантажити дані. Спробуйте оновити сторінку.');
+
+function product(P) {
+  const box = el('div', 'prod');
+  box.appendChild(el('h2', '', P.title));
+  box.appendChild(el('div', 'sub', 'Код ' + P.code + (P.rrp ? ' · РРЦ ' + fmt(P.rrp) : '') + (P.checked ? ' · перевірено ' + P.checked : '')));
+  const market = P.sellers.filter(s => s.d !== SUPPLIER_DOM);
+  const inStock = market.filter(s => s.st !== 'немає в наявності');
+  const prices = inStock.map(s => s.p).sort((a, b) => a - b);
+  const below = inStock.filter(s => s.st === 'нижче РРЦ');
+  const med = prices.length ? (prices.length % 2 ? prices[(prices.length - 1) / 2] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2) : 0;
+
+  const k = el('div', 'kpis');
+  const kpi = (v, l, c) => { const d = el('div', 'kpi' + (c ? ' ' + c : '')); d.appendChild(el('b', '', v)); d.appendChild(el('span', '', l)); k.appendChild(d); };
+  kpi(String(inStock.length), 'продавців у наявності' + (market.length > inStock.length ? ' (+' + (market.length - inStock.length) + ' без наявності)' : ''));
+  if (prices.length) {
+    const ch = inStock.filter(s => s.p === prices[0])[0];
+    kpi(fmt(prices[0]), 'найнижча ціна · ' + (ch.s ? ch.s + ' на ' : '') + ch.d, prices[0] < P.rrp ? 'red' : '');
+    kpi(fmt(med), 'медіана ринку');
+    kpi(String(below.length), 'продають нижче РРЦ', below.length ? 'red' : 'green');
+  }
+  box.appendChild(k);
+
+  if (prices.length && P.rrp) {
+    const pos = prices.filter(p => p < P.rrp - 0.5).length;
+    const dm = Math.round((P.rrp - med) / med * 1000) / 10;
+    const v = el('div', 'verdict ' + (below.length === 0 ? 'ok' : below.length / prices.length > 0.3 ? 'bad' : 'mid'));
+    v.textContent = below.length === 0
+      ? 'РРЦ у ринку: ніхто з ' + prices.length + ' продавців не продає дешевше за РРЦ.'
+      : 'Дешевше за РРЦ продають ' + below.length + ' з ' + prices.length + ' продавців. ' +
+        'РРЦ ' + (Math.abs(dm) < 1 ? 'дорівнює медіані ринку' : (dm > 0 ? 'вища за медіану ринку на ' : 'нижча за медіану ринку на ') + String(Math.abs(dm)).replace('.', ',') + ' %') +
+        '; найнижча ціна — на ' + String(Math.round((P.rrp - prices[0]) / P.rrp * 1000) / 10).replace('.', ',') + ' % нижче РРЦ.';
+    box.appendChild(v);
+    box.appendChild(el('h3', '', 'Де РРЦ серед цін продавців'));
+    box.appendChild(strip(P, inStock, box));
+  }
+
+  if (P.hist.length >= 2) {
+    box.appendChild(el('h3', '', 'Як змінювались ціни'));
+    box.appendChild(histChart(P));
+  } else {
+    box.appendChild(el('h3', '', 'Як змінювались ціни'));
+    box.appendChild(el('div', 'sub', 'Графік з\'явиться після кількох днів спостережень.'));
+  }
+
+  box.appendChild(el('h3', '', 'Усі продавці'));
+  const f = el('div', 'filters');
+  const lab = (txt, on) => { const l = el('label', 'cb'); const c = el('input'); c.type = 'checkbox'; c.checked = !!on; l.appendChild(c); l.appendChild(document.createTextNode(txt)); f.appendChild(l); return c; };
+  const cBelow = lab('лише нижче РРЦ'), cStock = lab('лише в наявності');
+  const dl = el('button', 'btn', 'Завантажити в Excel'); f.appendChild(dl);
+  box.appendChild(f);
+  const tw = el('div', 'tw'); box.appendChild(tw);
+  const draw = () => {
+    const rows = P.sellers.filter(s => (!cBelow.checked || s.st === 'нижче РРЦ') && (!cStock.checked || s.st !== 'немає в наявності'));
+    tw.textContent = '';
+    if (!rows.length) { tw.appendChild(el('div', 'empty', 'Немає продавців за цим фільтром.')); return; }
+    const t = el('table'), h = el('tr');
+    ['#', 'Магазин', 'Ціна', 'До РРЦ', 'Наявність', 'Звідки', 'Знайдено', 'Назва на сторінці'].forEach(x => h.appendChild(el('th', '', x)));
+    t.appendChild(h);
+    rows.forEach((s, i) => {
+      const r = el('tr'); r.id = 'r' + P.code + '_' + P.sellers.indexOf(s);
+      if (s.d === SUPPLIER_DOM) r.className = 'sup';
+      r.appendChild(el('td', 'num', String(i + 1)));
+      const td = el('td'); const a = el('a', '', s.s ? s.s : s.d); a.href = s.u; a.target = '_blank'; a.rel = 'noopener'; td.appendChild(a);
+      if (s.s) td.appendChild(el('span', 'tag', s.d));
+      if (s.d === SUPPLIER_DOM) td.appendChild(el('span', 'tag', 'постачальник'));
+      r.appendChild(td);
+      r.appendChild(el('td', 'num', fmt(s.p)));
+      r.appendChild(el('td', s.diff == null ? 'num' : s.diff <= -1 ? 'neg' : s.diff >= 1 ? 'pos' : 'num', s.diff == null ? '' : pct(s.diff)));
+      r.appendChild(el('td', '', s.a || (s.st === 'немає в наявності' ? 'немає' : '—')));
+      r.appendChild(el('td', '', s.src));
+      r.appendChild(el('td', '', s.first));
+      r.appendChild(el('td', 't', s.t + (s.note ? ' (' + s.note + ')' : '')));
+      t.appendChild(r);
+    });
+    tw.appendChild(t);
+  };
+  cBelow.onchange = draw; cStock.onchange = draw; draw();
+  dl.onclick = () => xls([['Магазин', 'Продавець', 'Ціна', 'РРЦ', 'Різниця %', 'Наявність', 'Звідки', 'Знайдено', 'Посилання']]
+    .concat(P.sellers.map(s => [s.d, s.s, s.p, P.rrp, s.diff == null ? '' : s.diff, s.a, s.src, s.first, s.u])), 'Ціни ринку ' + P.code);
+  if (P.pages) box.appendChild(el('div', 'sub', 'Перевірено сторінок: ' + P.pages + ', з них відкинуто як інший товар або список товарів: ' + P.rejected + '.'));
+  $('list').appendChild(box);
+}
+
+// Смуга: кожна точка — продавець, синя лінія — РРЦ
+function strip(P, list, box) {
+  const wrap = el('div', 'strip');
+  const ps = list.map(s => s.p).concat([P.rrp]);
+  let lo = Math.min.apply(null, ps), hi = Math.max.apply(null, ps);
+  const pad = (hi - lo) * 0.06 || hi * 0.03; lo -= pad; hi += pad;
+  const x = p => ((p - lo) / (hi - lo) * 100) + '%';
+  wrap.appendChild(el('div', 'axis'));
+  const r = el('div', 'rrp'); r.style.left = x(P.rrp); r.appendChild(el('span', '', 'РРЦ ' + fmt(P.rrp))); wrap.appendChild(r);
+  list.forEach(s => {
+    const d = el('div', 'dot ' + (s.st === 'нижче РРЦ' ? 'below' : 'ok'));
+    d.style.left = x(s.p); d.title = (s.s ? s.s + ' · ' : '') + s.d + ': ' + fmt(s.p);
+    d.onclick = () => { const row = document.getElementById('r' + P.code + '_' + P.sellers.indexOf(s)); if (row) { row.scrollIntoView({ block: 'center', behavior: 'smooth' }); row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 1500); } };
+    wrap.appendChild(d);
+  });
+  const l1 = el('div', 'lab', fmt(Math.min.apply(null, list.map(s => s.p)))); l1.style.left = '0'; wrap.appendChild(l1);
+  const l2 = el('div', 'lab', fmt(Math.max.apply(null, list.map(s => s.p)))); l2.style.right = '0'; wrap.appendChild(l2);
+  return wrap;
+}
+
+// Лінії: РРЦ, медіана, мінімум
+function histChart(P) {
+  const H = P.hist, W = 1000, Hh = 220, L = 70, R = 10, T = 10, B = 28;
+  const vals = []; H.forEach(h => { [h.rrp, h.med, h.min].forEach(v => { if (v) vals.push(v); }); });
+  let lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+  const pad = (hi - lo) * 0.1 || hi * 0.05; lo -= pad; hi += pad;
+  const X = i => L + (H.length === 1 ? 0 : i / (H.length - 1) * (W - L - R));
+  const Y = v => T + (1 - (v - lo) / (hi - lo)) * (Hh - T - B);
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', '0 0 ' + W + ' ' + Hh); svg.style.width = '100%'; svg.style.height = 'auto';
+  const add = (tag, at, txt) => { const e = document.createElementNS(ns, tag); Object.keys(at).forEach(k => e.setAttribute(k, at[k])); if (txt) e.textContent = txt; svg.appendChild(e); return e; };
+  for (let g = 0; g <= 3; g++) {
+    const v = lo + (hi - lo) * g / 3, y = Y(v);
+    add('line', { x1: L, x2: W - R, y1: y, y2: y, stroke: '#e4e7ec' });
+    add('text', { x: L - 8, y: y + 4, 'text-anchor': 'end' }, Math.round(v / 100) * 100 >= 1000 ? Math.round(v).toLocaleString('uk-UA') : String(Math.round(v)));
+  }
+  const step = Math.max(1, Math.ceil(H.length / 8));
+  H.forEach((h, i) => { if (i % step === 0 || i === H.length - 1) add('text', { x: X(i), y: Hh - 8, 'text-anchor': 'middle' }, h.d); });
+  const line = (key, color, dash) => {
+    const pts = H.map((h, i) => h[key] ? X(i) + ',' + Y(h[key]) : null).filter(Boolean);
+    if (pts.length > 1) add('polyline', { points: pts.join(' '), fill: 'none', stroke: color, 'stroke-width': 2.5, 'stroke-dasharray': dash || '' });
+    H.forEach((h, i) => { if (h[key]) { const c = add('circle', { cx: X(i), cy: Y(h[key]), r: 3.5, fill: color }); const t = document.createElementNS(ns, 'title'); t.textContent = h.d + ': ' + fmt(h[key]); c.appendChild(t); } });
+  };
+  line('rrp', '#2f5bd3', '6 4'); line('med', '#7d8597'); line('min', '#c8372d');
+  const box = el('div');
+  box.appendChild(svg);
+  const lg = el('div', 'legend');
+  [['#2f5bd3', 'РРЦ'], ['#7d8597', 'медіана ринку'], ['#c8372d', 'найнижча ціна']].forEach(x => { const s = el('span'); const i = el('i'); i.style.background = x[0]; s.appendChild(i); s.appendChild(document.createTextNode(x[1])); lg.appendChild(s); });
+  box.appendChild(lg);
+  return box;
+}
+
+function xls(rows, name) {
+  const esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const html = '<html><head><meta charset="utf-8"></head><body><table>' + rows.map(r => '<tr>' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') + '</table></body></html>';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + html], { type: 'application/vnd.ms-excel' }));
+  a.download = name + '.xls'; a.click();
+}
+</script>
+</body></html>
