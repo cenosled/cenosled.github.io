@@ -64,7 +64,7 @@ fetch(API + '?format=json&action=market&k=' + encodeURIComponent(K))
 function product(P) {
   const box = el('div', 'prod');
   box.appendChild(el('h2', '', P.title));
-  box.appendChild(el('div', 'sub', 'Код ' + P.code + (P.rrp ? ' · РРЦ ' + fmt(P.rrp) : '') + (P.checked ? ' · перевірено ' + P.checked : '')));
+  box.appendChild(el('div', 'sub', 'Код ' + P.code + (P.rrp ? ' · РРЦ ' + fmt(P.rrp) : '')));
   const market = P.sellers.filter(s => s.d !== SUPPLIER_DOM);
   const inStock = market.filter(s => s.st !== 'немає в наявності');
   const prices = inStock.map(s => s.p).sort((a, b) => a - b);
