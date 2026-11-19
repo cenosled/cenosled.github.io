@@ -35,10 +35,15 @@ td.t{white-space:normal;min-width:220px;color:var(--mute);font-size:12px}
 a{color:var(--accent)}.empty{color:var(--mute);padding:20px;text-align:center}
 .btn{font:inherit;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer}
 .btn:hover{background:#f0f2f5}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.tab{font:inherit;font-size:14px;padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);cursor:pointer;text-align:left}
+.tab small{display:block;color:var(--mute);font-size:12px}
+.tab.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
 .foot{color:var(--mute);font-size:12px;margin-top:32px}
 </style></head><body><div class="wrap">
 <h1>Ціни ринку</h1>
 <div class="sub" id="sub">Завантаження даних…</div>
+<div class="tabs" id="tabs"></div>
 <div id="list"></div>
 <div class="foot">Ціни збираються автоматично щодня (Пн–Пт) з усіх українських інтернет-магазинів і маркетплейсів, де продається товар.
 Кожну сторінку перевірено: на ній саме цей товар (інші версії, комплекти та аксесуари відкинуто), ціна в гривнях. Для маркетплейсів кожен продавець рахується окремо. Посилання веде на сторінку, де знайдено ціну.</div>
@@ -59,11 +64,29 @@ fetch(API + '?format=json&action=market&k=' + encodeURIComponent(K))
     $('sub').textContent = (D.supplier ? 'Для ' + D.supplier + ' · ' : '') + (D.updated ? 'оновлено ' + D.updated : 'ще не перевірялось');
     if (!D.products.length) $('list').appendChild(el('div', 'empty', 'Товарів для відстеження ще немає.'));
     D.products.forEach(product);
+    if (D.products.length > 1) {
+      const want = new URLSearchParams(location.search).get('p');
+      const boxes = [...document.querySelectorAll('.prod')];
+      const pick = code => {
+        boxes.forEach(b => b.style.display = b.dataset.code === code ? '' : 'none');
+        [...document.querySelectorAll('.tab')].forEach(t => t.classList.toggle('on', t.dataset.code === code));
+        try { const u = new URL(location.href); u.searchParams.set('p', code); history.replaceState(null, '', u); } catch (e) {}
+      };
+      D.products.forEach(P => {
+        const t = el('button', 'tab'); t.dataset.code = P.code;
+        t.appendChild(document.createTextNode(P.title.replace(/\s*\(.*\)\s*$/, '')));
+        const n = P.sellers.filter(s => s.d !== SUPPLIER_DOM && s.st === 'нижче РРЦ').length;
+        t.appendChild(el('small', '', P.sellers.length ? 'нижче РРЦ: ' + n + ' з ' + P.sellers.filter(s => s.d !== SUPPLIER_DOM).length : 'ще не перевірено'));
+        t.onclick = () => pick(P.code);
+        $('tabs').appendChild(t);
+      });
+      pick(D.products.some(P => P.code === want) ? want : D.products[0].code);
+    }
   })
   .catch(() => $('sub').textContent = 'Не вдалося завантажити дані. Спробуйте оновити сторінку.');
 
 function product(P) {
-  const box = el('div', 'prod');
+  const box = el('div', 'prod'); box.dataset.code = P.code;
   box.appendChild(el('h2', '', P.title));
   box.appendChild(el('div', 'sub', 'Код ' + P.code + (P.rrp ? ' · РРЦ ' + fmt(P.rrp) : '')));
   const market = P.sellers.filter(s => s.d !== SUPPLIER_DOM);
