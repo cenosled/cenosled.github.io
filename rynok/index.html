@@ -75,8 +75,8 @@ fetch(API + '?format=json&action=market&k=' + encodeURIComponent(K))
       D.products.forEach(P => {
         const t = el('button', 'tab'); t.dataset.code = P.code;
         t.appendChild(document.createTextNode(P.title.replace(/\s*\(.*\)\s*$/, '')));
-        const n = P.sellers.filter(s => s.d !== SUPPLIER_DOM && s.st === 'нижче РРЦ').length;
-        t.appendChild(el('small', '', P.sellers.length ? 'нижче РРЦ: ' + n + ' з ' + P.sellers.filter(s => s.d !== SUPPLIER_DOM).length : 'ще не перевірено'));
+        const mk = P.sellers.filter(s => s.d !== SUPPLIER_DOM && s.st !== 'немає в наявності');
+        t.appendChild(el('small', '', mk.length ? 'нижче РРЦ: ' + mk.filter(s => s.st === 'нижче РРЦ').length + ' з ' + mk.length : 'ще не перевірено'));
         t.onclick = () => pick(P.code);
         $('tabs').appendChild(t);
       });
