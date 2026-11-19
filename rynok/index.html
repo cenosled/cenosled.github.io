@@ -29,6 +29,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:8px 12px;
 tr:last-child td{border-bottom:0}
 th{color:var(--mute);font-weight:500;background:#fafbfc}td.num{text-align:right}td.neg{color:var(--red);font-weight:600;text-align:right}td.pos{color:var(--green);text-align:right}
 tr.sup td{background:#eef2fc}tr.flash td{background:#fff3c4}
+td.yes{color:var(--green)}td.no{color:var(--red)}td.unk{color:var(--mute)}
 td.t{white-space:normal;min-width:220px;color:var(--mute);font-size:12px}
 .tag{font-size:11px;color:var(--mute);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-left:6px}
 a{color:var(--accent)}.empty{color:var(--mute);padding:20px;text-align:center}
@@ -39,7 +40,7 @@ a{color:var(--accent)}.empty{color:var(--mute);padding:20px;text-align:center}
 <h1>Ціни ринку</h1>
 <div class="sub" id="sub">Завантаження даних…</div>
 <div id="list"></div>
-<div class="foot">Ціни збираються автоматично щодня (Пн–Пт) з усіх українських інтернет-магазинів, які знайдено в Google, Google Покупках, на Hotline і маркетплейсах (Prom, Rozetka та ін.).
+<div class="foot">Ціни збираються автоматично щодня (Пн–Пт) з усіх українських інтернет-магазинів і маркетплейсів, де продається товар.
 Кожну сторінку перевірено: на ній саме цей товар (інші версії, комплекти та аксесуари відкинуто), ціна в гривнях. Для маркетплейсів кожен продавець рахується окремо. Посилання веде на сторінку, де знайдено ціну.</div>
 </div>
 <script>
@@ -73,7 +74,8 @@ function product(P) {
 
   const k = el('div', 'kpis');
   const kpi = (v, l, c) => { const d = el('div', 'kpi' + (c ? ' ' + c : '')); d.appendChild(el('b', '', v)); d.appendChild(el('span', '', l)); k.appendChild(d); };
-  kpi(String(inStock.length), 'продавців у наявності' + (market.length > inStock.length ? ' (+' + (market.length - inStock.length) + ' без наявності)' : ''));
+  const nYes = market.filter(s => s.a === 'є').length, nNo = market.length - inStock.length, nUnk = market.length - nYes - nNo;
+  kpi(String(inStock.length), 'продавців · у наявності ' + nYes + (nUnk ? ', не вказано ' + nUnk : '') + (nNo ? ' (+' + nNo + ' немає в наявності)' : ''));
   if (prices.length) {
     const ch = inStock.filter(s => s.p === prices[0])[0];
     kpi(fmt(prices[0]), 'найнижча ціна · ' + (ch.s ? ch.s + ' на ' : '') + ch.d, prices[0] < P.rrp ? 'red' : '');
@@ -107,16 +109,16 @@ function product(P) {
   box.appendChild(el('h3', '', 'Усі продавці'));
   const f = el('div', 'filters');
   const lab = (txt, on) => { const l = el('label', 'cb'); const c = el('input'); c.type = 'checkbox'; c.checked = !!on; l.appendChild(c); l.appendChild(document.createTextNode(txt)); f.appendChild(l); return c; };
-  const cBelow = lab('лише нижче РРЦ'), cStock = lab('лише в наявності');
+  const cBelow = lab('лише нижче РРЦ'), cStock = lab('лише з наявністю «є»');
   const dl = el('button', 'btn', 'Завантажити в Excel'); f.appendChild(dl);
   box.appendChild(f);
   const tw = el('div', 'tw'); box.appendChild(tw);
   const draw = () => {
-    const rows = P.sellers.filter(s => (!cBelow.checked || s.st === 'нижче РРЦ') && (!cStock.checked || s.st !== 'немає в наявності'));
+    const rows = P.sellers.filter(s => (!cBelow.checked || s.st === 'нижче РРЦ') && (!cStock.checked || s.a === 'є'));
     tw.textContent = '';
     if (!rows.length) { tw.appendChild(el('div', 'empty', 'Немає продавців за цим фільтром.')); return; }
     const t = el('table'), h = el('tr');
-    ['#', 'Магазин', 'Ціна', 'До РРЦ', 'Наявність', 'Звідки', 'Знайдено', 'Назва на сторінці'].forEach(x => h.appendChild(el('th', '', x)));
+    ['#', 'Магазин', 'Ціна', 'До РРЦ', 'Наявність', 'Знайдено', 'Назва на сторінці'].forEach(x => h.appendChild(el('th', '', x)));
     t.appendChild(h);
     rows.forEach((s, i) => {
       const r = el('tr'); r.id = 'r' + P.code + '_' + P.sellers.indexOf(s);
@@ -128,8 +130,8 @@ function product(P) {
       r.appendChild(td);
       r.appendChild(el('td', 'num', fmt(s.p)));
       r.appendChild(el('td', s.diff == null ? 'num' : s.diff <= -1 ? 'neg' : s.diff >= 1 ? 'pos' : 'num', s.diff == null ? '' : pct(s.diff)));
-      r.appendChild(el('td', '', s.a || (s.st === 'немає в наявності' ? 'немає' : '—')));
-      r.appendChild(el('td', '', s.src));
+      const av = s.a || (s.st === 'немає в наявності' ? 'немає' : 'не вказано');
+      r.appendChild(el('td', av === 'є' ? 'yes' : av === 'не вказано' ? 'unk' : av === 'немає' ? 'no' : '', av));
       r.appendChild(el('td', '', s.first));
       r.appendChild(el('td', 't', s.t + (s.note ? ' (' + s.note + ')' : '')));
       t.appendChild(r);
@@ -137,8 +139,9 @@ function product(P) {
     tw.appendChild(t);
   };
   cBelow.onchange = draw; cStock.onchange = draw; draw();
-  dl.onclick = () => xls([['Магазин', 'Продавець', 'Ціна', 'РРЦ', 'Різниця %', 'Наявність', 'Звідки', 'Знайдено', 'Посилання']]
-    .concat(P.sellers.map(s => [s.d, s.s, s.p, P.rrp, s.diff == null ? '' : s.diff, s.a, s.src, s.first, s.u])), 'Ціни ринку ' + P.code);
+  dl.onclick = () => xls([['Магазин', 'Продавець', 'Ціна', 'РРЦ', 'Різниця %', 'Наявність', 'Знайдено', 'Посилання']]
+    .concat(P.sellers.map(s => [s.d, s.s, s.p, P.rrp, s.diff == null ? '' : s.diff, s.a, s.first, s.u])), 'Ціни ринку ' + P.code);
+  box.appendChild(el('div', 'sub', 'Наявність — як її вказує сторінка магазину. «Не вказано» — магазин не показує наявність на сторінці товару.'));
   if (P.pages) box.appendChild(el('div', 'sub', 'Перевірено сторінок: ' + P.pages + ', з них відкинуто як інший товар або список товарів: ' + P.rejected + '.'));
   $('list').appendChild(box);
 }
