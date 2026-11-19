@@ -75,7 +75,7 @@ function product(P) {
   const k = el('div', 'kpis');
   const kpi = (v, l, c) => { const d = el('div', 'kpi' + (c ? ' ' + c : '')); d.appendChild(el('b', '', v)); d.appendChild(el('span', '', l)); k.appendChild(d); };
   const nYes = market.filter(s => s.a === 'є').length, nNo = market.length - inStock.length, nUnk = market.length - nYes - nNo;
-  kpi(String(inStock.length), 'продавців · у наявності ' + nYes + (nUnk ? ', не вказано ' + nUnk : '') + (nNo ? ' (+' + nNo + ' немає в наявності)' : ''));
+  kpi(String(inStock.length), 'продавців · у наявності ' + nYes + (nUnk ? ', без даних про наявність ' + nUnk : '') + (nNo ? ' (+' + nNo + ' немає в наявності)' : ''));
   if (prices.length) {
     const ch = inStock.filter(s => s.p === prices[0])[0];
     kpi(fmt(prices[0]), 'найнижча ціна · ' + (ch.s ? ch.s + ' на ' : '') + ch.d, prices[0] < P.rrp ? 'red' : '');
@@ -130,8 +130,8 @@ function product(P) {
       r.appendChild(td);
       r.appendChild(el('td', 'num', fmt(s.p)));
       r.appendChild(el('td', s.diff == null ? 'num' : s.diff <= -1 ? 'neg' : s.diff >= 1 ? 'pos' : 'num', s.diff == null ? '' : pct(s.diff)));
-      const av = s.a || (s.st === 'немає в наявності' ? 'немає' : 'не вказано');
-      r.appendChild(el('td', av === 'є' ? 'yes' : av === 'не вказано' ? 'unk' : av === 'немає' ? 'no' : '', av));
+      const av = s.a || (s.st === 'немає в наявності' ? 'немає' : /не читається/.test(s.note) ? 'не перевірено' : 'не вказано');
+      r.appendChild(el('td', av === 'є' ? 'yes' : (av === 'не вказано' || av === 'не перевірено') ? 'unk' : av === 'немає' ? 'no' : '', av));
       r.appendChild(el('td', '', s.first));
       r.appendChild(el('td', 't', s.t + (s.note ? ' (' + s.note + ')' : '')));
       t.appendChild(r);
@@ -141,7 +141,7 @@ function product(P) {
   cBelow.onchange = draw; cStock.onchange = draw; draw();
   dl.onclick = () => xls([['Магазин', 'Продавець', 'Ціна', 'РРЦ', 'Різниця %', 'Наявність', 'Знайдено', 'Посилання']]
     .concat(P.sellers.map(s => [s.d, s.s, s.p, P.rrp, s.diff == null ? '' : s.diff, s.a, s.first, s.u])), 'Ціни ринку ' + P.code);
-  box.appendChild(el('div', 'sub', 'Наявність — як її вказує сторінка магазину. «Не вказано» — магазин не показує наявність на сторінці товару.'));
+  box.appendChild(el('div', 'sub', 'Наявність — як її вказує сторінка магазину. «Не вказано» — магазин не показує наявність на сторінці товару. «Не перевірено» — сайт магазину блокує автоматичну перевірку, ціну взято з Google Покупок; наявність варто подивитись за посиланням.'));
   if (P.pages) box.appendChild(el('div', 'sub', 'Перевірено сторінок: ' + P.pages + ', з них відкинуто як інший товар або список товарів: ' + P.rejected + '.'));
   $('list').appendChild(box);
 }
