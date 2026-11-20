@@ -34,7 +34,7 @@ td.rj{width:1%;white-space:nowrap}.xb{font:inherit;font-size:12px;border:1px sol
 .tip{position:relative}.tip:not(.on):hover::after{content:attr(data-tip);position:absolute;right:0;bottom:calc(100% + 6px);background:#333;color:#fff;font-size:12px;white-space:nowrap;padding:5px 8px;border-radius:6px;pointer-events:none;z-index:5}.xb.on{background:#c0392b;color:#fff;border-color:#c0392b}
 details.hid{margin-top:8px;font-size:13px}.hrow{display:flex;gap:8px;align-items:center;padding:4px 0;flex-wrap:wrap}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:8px;z-index:99}tr.flash td{background:#fff3c4}
-td.yes{color:var(--green)}td.no{color:var(--red)}td.unk{color:var(--mute)}
+td.yes{color:var(--green)}td.no{color:var(--red)}td.unk{color:var(--mute)}tr.unv td{color:var(--mute)}tr.unv td a{color:var(--mute)}
 td.t{white-space:normal;min-width:220px;color:var(--mute);font-size:12px}
 .tag{font-size:11px;color:var(--mute);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-left:6px}
 a{color:var(--accent)}.empty{color:var(--mute);padding:20px;text-align:center}
@@ -148,7 +148,7 @@ function load(pickCode) {
     if (D.products.length > 1) D.products.forEach(P => {
       const t = el('button', 'tab' + (P.on ? '' : ' off')); t.dataset.code = P.code;
       t.appendChild(document.createTextNode(P.title.replace(/\s*\(.*\)\s*$/, '')));
-      const mk = P.sellers.filter(s => s.d !== SUPPLIER_DOM && s.st !== 'немає в наявності');
+      const mk = P.sellers.filter(s => s.d !== SUPPLIER_DOM && s.st !== 'немає в наявності' && s.st !== UNV);
       t.appendChild(el('small', '', !P.on ? 'на паузі' : mk.length ? 'нижче РРЦ: ' + mk.filter(s => s.st === 'нижче РРЦ').length + ' з ' + mk.length +
         (P.analogs.length ? ' · аналогів ' + P.analogs.length : '') : 'перевірка триває'));
       t.onclick = () => pick(P.code);
@@ -159,8 +159,10 @@ function load(pickCode) {
 }
 load();
 
+// Ціна лише з Google Покупок (сайт магазину не пускає перевірку) — показуємо сірим, у підсумки не рахуємо
+const UNV = 'ціна не перевірена';
 function stats(P) {
-  const market = P.sellers.filter(s => s.d !== SUPPLIER_DOM);
+  const market = P.sellers.filter(s => s.d !== SUPPLIER_DOM && s.st !== UNV);
   const inStock = market.filter(s => s.st !== 'немає в наявності');
   const prices = inStock.map(s => s.p).sort((a, b) => a - b);
   const med = prices.length ? (prices.length % 2 ? prices[(prices.length - 1) / 2] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2) : 0;
@@ -195,7 +197,9 @@ function product(P) {
   const k = el('div', 'kpis');
   const kpi = (v, l, c) => { const d = el('div', 'kpi' + (c ? ' ' + c : '')); d.appendChild(el('b', '', v)); d.appendChild(el('span', '', l)); k.appendChild(d); };
   const nYes = market.filter(s => s.a === 'є').length, nNo = market.length - inStock.length, nUnk = market.length - nYes - nNo;
-  kpi(String(inStock.length), 'продавців · у наявності ' + nYes + (nUnk ? ', без даних про наявність ' + nUnk : '') + (nNo ? ' (+' + nNo + ' немає в наявності)' : ''));
+  const nUnv = P.sellers.filter(s => s.st === UNV).length;
+  kpi(String(inStock.length), 'продавців · у наявності ' + nYes + (nUnk ? ', без даних про наявність ' + nUnk : '') + (nNo ? ' (+' + nNo + ' немає в наявності)' : '') +
+      (nUnv ? ' · ще ' + nUnv + ' з неперевіреною ціною (не враховано)' : ''));
   if (prices.length) {
     const ch = inStock.filter(s => s.p === prices[0])[0];
     kpi(fmt(prices[0]), 'найнижча ціна · ' + (ch.s ? ch.s + ' на ' : '') + ch.d, prices[0] < P.rrp ? 'red' : '');
@@ -243,13 +247,14 @@ function product(P) {
     rows.forEach((s, i) => {
       const r = el('tr'); r.id = 'r' + P.code + '_' + P.sellers.indexOf(s);
       if (s.d === SUPPLIER_DOM) r.className = 'sup';
+      if (s.st === UNV) { r.className = 'unv'; r.title = 'Сайт магазину не пускає автоматичну перевірку, ціна з Google Покупок може бути застарілою. У підсумки не враховано.'; }
       r.appendChild(el('td', 'num', String(i + 1)));
       const td = el('td'); const a = el('a', '', s.s ? s.s : s.d); a.href = s.u; a.target = '_blank'; a.rel = 'noopener'; td.appendChild(a);
       if (s.s) td.appendChild(el('span', 'tag', s.d));
       if (s.d === SUPPLIER_DOM) td.appendChild(el('span', 'tag', 'постачальник'));
       r.appendChild(td);
-      r.appendChild(el('td', 'num', fmt(s.p)));
-      r.appendChild(el('td', s.diff == null ? 'num' : s.diff <= -1 ? 'neg' : s.diff >= 1 ? 'pos' : 'num', s.diff == null ? '' : pct(s.diff)));
+      r.appendChild(el('td', 'num', fmt(s.p) + (s.st === UNV ? ' ?' : '')));
+      r.appendChild(el('td', s.diff == null || s.st === UNV ? 'num' : s.diff <= -1 ? 'neg' : s.diff >= 1 ? 'pos' : 'num', s.diff == null ? '' : pct(s.diff)));
       const av = s.a || (s.st === 'немає в наявності' ? 'немає' : /не читається/.test(s.note) ? 'не перевірено' : 'не вказано');
       r.appendChild(el('td', av === 'є' ? 'yes' : (av === 'не вказано' || av === 'не перевірено') ? 'unk' : av === 'немає' ? 'no' : '', av));
       r.appendChild(el('td', '', s.first));
@@ -262,7 +267,7 @@ function product(P) {
   cBelow.onchange = draw; cStock.onchange = draw; draw();
   dl.onclick = () => xls([['Магазин', 'Продавець', 'Ціна', 'РРЦ', 'Різниця %', 'Наявність', 'Знайдено', 'Посилання']]
     .concat(P.sellers.map(s => [s.d, s.s, s.p, P.rrp, s.diff == null ? '' : s.diff, s.a, s.first, s.u])), 'Ціни ринку ' + P.code);
-  box.appendChild(el('div', 'sub', 'Наявність — як її вказує сторінка магазину. «Не вказано» — магазин не показує наявність на сторінці товару. «Не перевірено» — сайт магазину блокує автоматичну перевірку, ціну взято з Google Покупок; наявність варто подивитись за посиланням.'));
+  box.appendChild(el('div', 'sub', 'Наявність — як її вказує сторінка магазину. «Не вказано» — магазин не показує наявність на сторінці товару. «Не перевірено» (сірий рядок, ціна зі знаком «?») — сайт магазину блокує автоматичну перевірку, ціну взято з Google Покупок, вона може бути застарілою; такі ціни не враховуються в мінімумі, медіані й порушеннях РРЦ — подивіться за посиланням.'));
   if (P.pages) box.appendChild(el('div', 'sub', 'Перевірено сторінок: ' + P.pages + ', з них відкинуто як інший товар або список товарів: ' + P.rejected + '.'));
   hiddenList(P, box);
   analogs(P, box);
@@ -326,10 +331,10 @@ function analogs(P, box) {
       const t = el('table'), hr = el('tr');
       ['#', 'Магазин', 'Ціна', 'Наявність', 'Назва на сторінці', ''].forEach(x => hr.appendChild(el('th', '', x))); t.appendChild(hr);
       A.sellers.forEach((s, i) => {
-        const r = el('tr');
+        const r = el('tr'); if (s.st === UNV) { r.className = 'unv'; r.title = 'Ціна з Google Покупок, не перевірена — у підсумки не враховано'; }
         r.appendChild(el('td', 'num', String(i + 1)));
         const td = el('td'); const a = el('a', '', s.s || s.d); a.href = s.u; a.target = '_blank'; a.rel = 'noopener'; td.appendChild(a); if (s.s) td.appendChild(el('span', 'tag', s.d)); r.appendChild(td);
-        r.appendChild(el('td', 'num', fmt(s.p)));
+        r.appendChild(el('td', 'num', fmt(s.p) + (s.st === UNV ? ' ?' : '')));
         const av = s.a || (s.st === 'немає в наявності' ? 'немає' : /не читається/.test(s.note) ? 'не перевірено' : 'не вказано');
         r.appendChild(el('td', av === 'є' ? 'yes' : av === 'немає' ? 'no' : 'unk', av));
         r.appendChild(el('td', 't', s.t));
