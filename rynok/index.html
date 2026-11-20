@@ -88,7 +88,8 @@ a{color:var(--accent)}.empty{color:var(--mute);padding:20px;text-align:center}
 </div>
 <div id="stA" style="display:none">
   <label class="fl">Аналог до товару TRINITI</label>
-  <select id="of"></select>
+  <input id="ofq" placeholder="Код або назва з каталогу TRINITI" autocomplete="off">
+  <div id="ofres" class="res"></div>
   <label class="fl">Назва товару-аналога (бренд і модель)</label>
   <div class="row"><input id="an" placeholder="Напр. EcoFlow STREAM Ultra" autocomplete="off"><button class="btn" id="anGo">Далі</button></div>
 </div>
@@ -309,11 +310,10 @@ function setMode(t) {
 function openDlg(t, of) {
   if (!D) return;
   $('dlgCount').textContent = 'Відстежується ' + D.count + ' з ' + D.limit + ' товарів (разом з аналогами).';
-  const sel = $('of'); sel.textContent = '';
-  D.products.forEach(P => { const o = el('option', '', P.title); o.value = P.code; sel.appendChild(o); });
-  if (!D.products.length) { const o = el('option', '', 'Спочатку додайте товар TRINITI'); o.value = ''; sel.appendChild(o); }
   setMode(t || 'triniti');
-  if (of) sel.value = of;
+  ofCode = ''; ofLabel = ''; $('ofq').value = '';
+  const P0 = of && D.products.find(P => P.code === of);
+  if (P0) setOf(P0.code, P0.title, false); else ofList(null);
   $('q').value = ''; $('res').textContent = ''; $('an').value = '';
   $('ov').classList.add('on');
   setTimeout(() => (t === 'analog' ? $('an') : $('q')).focus(), 50);
@@ -349,11 +349,45 @@ $('q').oninput = () => {
     }).catch(() => { if (my === qSeq) $('res').textContent = 'Не вдалося виконати пошук.'; });
   }, 350);
 };
+// «Аналог до» — будь-який товар з фіду TRINITI; якщо він ще не відстежується, додасться разом з аналогом
+let ofCode = '', ofLabel = '', ofNew = false, oTimer = null, oSeq = 0;
+function setOf(code, label, isNew) {
+  ofCode = code; ofLabel = label; ofNew = isNew;
+  $('ofq').value = label;
+  $('ofres').textContent = isNew ? 'Цей товар TRINITI ще не відстежується — його буде додано разом з аналогом (2 місця з ' + D.limit + ').' : '';
+}
+function ofList(items) {
+  const box = $('ofres'); box.textContent = '';
+  const tracked = {}; D.products.forEach(P => tracked[P.code] = P.title);
+  const list = items ? items.map(it => ({ c: it.c, n: it.n, p: it.p, t: !!tracked[it.c] }))
+                     : D.products.map(P => ({ c: P.code, n: P.title, p: P.rrp, t: true }));
+  if (!list.length) return box.textContent = items ? 'Нічого не знайдено в каталозі TRINITI.' : '';
+  if (!items) box.appendChild(el('div', 'sub', 'Уже відстежуються (або знайдіть будь-який інший товар у каталозі):'));
+  list.forEach(it => {
+    const b = el('button', 'ri');
+    b.appendChild(el('b', '', it.c + (it.p ? ' · ' + fmt(it.p) : '')));
+    b.appendChild(el('span', '', it.n));
+    if (!it.t) b.appendChild(el('em', '', 'ще не відстежується — додасться разом з аналогом'));
+    b.onclick = () => setOf(it.c, it.t ? (tracked[it.c] || it.n) : it.n, !it.t);
+    box.appendChild(b);
+  });
+}
+$('ofq').oninput = () => {
+  clearTimeout(oTimer); ofCode = '';
+  const v = $('ofq').value.trim();
+  if (v.length < 2) return ofList(null);
+  oTimer = setTimeout(() => {
+    const my = ++oSeq;
+    $('ofres').textContent = 'Шукаю в каталозі…';
+    api('feedsearch', { q: v }).then(r => { if (my === oSeq) { if (r.error) $('ofres').textContent = 'Помилка: ' + r.error; else ofList(r.items); } })
+      .catch(() => { if (my === oSeq) $('ofres').textContent = 'Не вдалося виконати пошук.'; });
+  }, 350);
+};
 $('anGo').onclick = () => {
   const n = $('an').value.trim();
-  if (!$('of').value) return $('dlgMsg').textContent = 'Спочатку додайте товар TRINITI, до якого буде аналог.';
+  if (!ofCode) return $('dlgMsg').textContent = 'Оберіть товар TRINITI, до якого буде аналог.';
   if (n.length < 3) return $('dlgMsg').textContent = 'Вкажіть бренд і модель аналога.';
-  pickRules({ type: 'analog', name: n }, 'Аналог до: ' + $('of').selectedOptions[0].textContent);
+  pickRules({ type: 'analog', name: n }, 'Аналог до: ' + ofLabel + (ofNew ? ' (товар TRINITI теж буде додано)' : ''));
 };
 $('an').onkeydown = e => { if (e.key === 'Enter') $('anGo').click(); };
 function pickRules(req, label) {
@@ -401,13 +435,13 @@ $('saveBtn').onclick = () => {
   if (!chosen) return;
   const b = $('saveBtn'); b.disabled = true;
   $('dlgMsg').textContent = 'Додаю…';
-  api('mkadd', Object.assign({}, chosen, { of: $('of').value, title: $('rTitle').value, must: $('rMust').value, excl: $('rExcl').value, who: $('who').value }))
+  api('mkadd', Object.assign({}, chosen, { of: ofCode, title: $('rTitle').value, must: $('rMust').value, excl: $('rExcl').value, who: $('who').value }))
     .then(r => {
       b.disabled = false;
       if (r.error) return $('dlgMsg').textContent = r.error;
       $('dlgMsg').textContent = '';
       $('ov').classList.remove('on');
-      load(chosen.type === 'analog' ? $('of').value : r.code);
+      load(chosen.type === 'analog' ? ofCode : r.code);
     }).catch(() => { b.disabled = false; $('dlgMsg').textContent = 'Не вдалося додати. Спробуйте ще раз.'; });
 };
 
