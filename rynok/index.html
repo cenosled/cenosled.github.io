@@ -28,7 +28,11 @@ label.cb{font-size:14px;color:var(--mute);display:flex;gap:6px;align-items:cente
 table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
 tr:last-child td{border-bottom:0}
 th{color:var(--mute);font-weight:500;background:#fafbfc}td.num{text-align:right}td.neg{color:var(--red);font-weight:600;text-align:right}td.pos{color:var(--green);text-align:right}
-tr.sup td{background:#eef2fc}tr.flash td{background:#fff3c4}
+tr.sup td{background:#eef2fc}
+td.rj{width:1%;white-space:nowrap}.xb{font:inherit;font-size:12px;border:1px solid var(--line);background:#fff;border-radius:6px;padding:2px 7px;cursor:pointer;color:#888}
+.xb:hover{color:#c0392b;border-color:#c0392b}.xb.on{background:#c0392b;color:#fff;border-color:#c0392b}
+details.hid{margin-top:8px;font-size:13px}.hrow{display:flex;gap:8px;align-items:center;padding:4px 0;flex-wrap:wrap}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:8px;z-index:99}tr.flash td{background:#fff3c4}
 td.yes{color:var(--green)}td.no{color:var(--red)}td.unk{color:var(--mute)}
 td.t{white-space:normal;min-width:220px;color:var(--mute);font-size:12px}
 .tag{font-size:11px;color:var(--mute);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-left:6px}
@@ -226,7 +230,7 @@ function product(P) {
     tw.textContent = '';
     if (!rows.length) { tw.appendChild(el('div', 'empty', 'Немає продавців за цим фільтром.')); return; }
     const t = el('table'), h = el('tr');
-    ['#', 'Магазин', 'Ціна', 'До РРЦ', 'Наявність', 'Знайдено', 'Назва на сторінці'].forEach(x => h.appendChild(el('th', '', x)));
+    ['#', 'Магазин', 'Ціна', 'До РРЦ', 'Наявність', 'Знайдено', 'Назва на сторінці', ''].forEach(x => h.appendChild(el('th', '', x)));
     t.appendChild(h);
     rows.forEach((s, i) => {
       const r = el('tr'); r.id = 'r' + P.code + '_' + P.sellers.indexOf(s);
@@ -242,6 +246,7 @@ function product(P) {
       r.appendChild(el('td', av === 'є' ? 'yes' : (av === 'не вказано' || av === 'не перевірено') ? 'unk' : av === 'немає' ? 'no' : '', av));
       r.appendChild(el('td', '', s.first));
       r.appendChild(el('td', 't', s.t + (s.note ? ' (' + s.note + ')' : '')));
+      r.appendChild(rejCell(P, s));
       t.appendChild(r);
     });
     tw.appendChild(t);
@@ -251,9 +256,43 @@ function product(P) {
     .concat(P.sellers.map(s => [s.d, s.s, s.p, P.rrp, s.diff == null ? '' : s.diff, s.a, s.first, s.u])), 'Ціни ринку ' + P.code);
   box.appendChild(el('div', 'sub', 'Наявність — як її вказує сторінка магазину. «Не вказано» — магазин не показує наявність на сторінці товару. «Не перевірено» — сайт магазину блокує автоматичну перевірку, ціну взято з Google Покупок; наявність варто подивитись за посиланням.'));
   if (P.pages) box.appendChild(el('div', 'sub', 'Перевірено сторінок: ' + P.pages + ', з них відкинуто як інший товар або список товарів: ' + P.rejected + '.'));
+  hiddenList(P, box);
   analogs(P, box);
   manage(P, box);
   $('list').appendChild(box);
+}
+
+// «Не той товар»: прибрати позицію зі звіту — вона більше не перевіряється (з 20.11.2026)
+function rejCell(P, s) {
+  const td = el('td', 'rj');
+  if (s.d === SUPPLIER_DOM) return td;
+  const b = el('button', 'xb', '✕'); b.title = 'Не той товар — прибрати зі звіту і більше не перевіряти';
+  let armed = false, tmr = null;
+  b.onclick = () => {
+    if (!armed) { armed = true; b.textContent = 'Прибрати?'; b.classList.add('on'); tmr = setTimeout(() => { armed = false; b.textContent = '✕'; b.classList.remove('on'); }, 4000); return; }
+    clearTimeout(tmr); b.disabled = true; b.textContent = '…';
+    api('mkreject', { code: P.code, url: s.u, dom: s.d, seller: s.s || '' }).then(r => {
+      if (r.error) { b.disabled = false; b.textContent = '✕'; b.classList.remove('on'); armed = false; return alertMsg(r.error); }
+      load(P.of || P.code);
+    }).catch(() => { b.disabled = false; b.textContent = '✕'; armed = false; });
+  };
+  td.appendChild(b);
+  return td;
+}
+function alertMsg(t) { const d = el('div', 'toast', t); document.body.appendChild(d); setTimeout(() => d.remove(), 4000); }
+function hiddenList(P, box) {
+  if (!P.hidden || !P.hidden.length) return;
+  const det = el('details', 'hid'); det.appendChild(el('summary', '', 'Приховано вручну як «не той товар»: ' + P.hidden.length));
+  P.hidden.forEach(x => {
+    const row = el('div', 'hrow');
+    const a = el('a', '', x.s ? x.s + ' · ' + x.d : x.d); a.href = x.u; a.target = '_blank'; a.rel = 'noopener'; row.appendChild(a);
+    row.appendChild(el('span', 'tag', x.at + (x.who ? ' · ' + x.who : '')));
+    const b = el('button', 'xb', 'Повернути');
+    b.onclick = () => { b.disabled = true; api('mkunreject', { code: P.code, url: x.u }).then(() => load(P.of || P.code)); };
+    row.appendChild(b); det.appendChild(row);
+  });
+  det.appendChild(el('div', 'sub', 'Повернута позиція знову з’явиться після наступної перевірки.'));
+  box.appendChild(det);
 }
 
 // Аналоги конкурентів: ціни ринку на аналог поряд з РРЦ і медіаною товару TRINITI
@@ -277,7 +316,7 @@ function analogs(P, box) {
         (d == null ? '' : ' · медіана аналога ' + (Math.abs(d) < 1 ? '≈ РРЦ' : (d < 0 ? 'дешевша за' : 'дорожча за') + ' РРЦ ' + P.title.replace(/\s*\(.*\)\s*$/, '') + ' на ' + String(Math.abs(d)).replace('.', ',') + ' %'))));
       const det = el('details'); det.appendChild(el('summary', '', 'Усі продавці аналога (' + A.sellers.length + ')'));
       const t = el('table'), hr = el('tr');
-      ['#', 'Магазин', 'Ціна', 'Наявність', 'Назва на сторінці'].forEach(x => hr.appendChild(el('th', '', x))); t.appendChild(hr);
+      ['#', 'Магазин', 'Ціна', 'Наявність', 'Назва на сторінці', ''].forEach(x => hr.appendChild(el('th', '', x))); t.appendChild(hr);
       A.sellers.forEach((s, i) => {
         const r = el('tr');
         r.appendChild(el('td', 'num', String(i + 1)));
@@ -286,9 +325,10 @@ function analogs(P, box) {
         const av = s.a || (s.st === 'немає в наявності' ? 'немає' : /не читається/.test(s.note) ? 'не перевірено' : 'не вказано');
         r.appendChild(el('td', av === 'є' ? 'yes' : av === 'немає' ? 'no' : 'unk', av));
         r.appendChild(el('td', 't', s.t));
+        r.appendChild(rejCell(A, s));
         t.appendChild(r);
       });
-      const tw = el('div', 'tw'); tw.appendChild(t); det.appendChild(tw); c.appendChild(det);
+      const tw = el('div', 'tw'); tw.appendChild(t); det.appendChild(tw); hiddenList(A, det); c.appendChild(det);
     }
     manage(A, c);
     box.appendChild(c);
