@@ -30,7 +30,8 @@ tr:last-child td{border-bottom:0}
 th{color:var(--mute);font-weight:500;background:#fafbfc}td.num{text-align:right}td.neg{color:var(--red);font-weight:600;text-align:right}td.pos{color:var(--green);text-align:right}
 tr.sup td{background:#eef2fc}
 td.rj{width:1%;white-space:nowrap}.xb{font:inherit;font-size:12px;border:1px solid var(--line);background:#fff;border-radius:6px;padding:2px 7px;cursor:pointer;color:#888}
-.xb:hover{color:#c0392b;border-color:#c0392b}.xb.on{background:#c0392b;color:#fff;border-color:#c0392b}
+.xb:hover{color:#c0392b;border-color:#c0392b}
+.tip{position:relative}.tip:not(.on):hover::after{content:attr(data-tip);position:absolute;right:0;bottom:calc(100% + 6px);background:#333;color:#fff;font-size:12px;white-space:nowrap;padding:5px 8px;border-radius:6px;pointer-events:none;z-index:5}.xb.on{background:#c0392b;color:#fff;border-color:#c0392b}
 details.hid{margin-top:8px;font-size:13px}.hrow{display:flex;gap:8px;align-items:center;padding:4px 0;flex-wrap:wrap}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:8px;z-index:99}tr.flash td{background:#fff3c4}
 td.yes{color:var(--green)}td.no{color:var(--red)}td.unk{color:var(--mute)}
@@ -266,10 +267,10 @@ function product(P) {
 function rejCell(P, s) {
   const td = el('td', 'rj');
   if (s.d === SUPPLIER_DOM) return td;
-  const b = el('button', 'xb', '✕'); b.title = 'Не той товар — прибрати зі звіту і більше не перевіряти';
+  const b = el('button', 'xb tip', '✕'); b.setAttribute('aria-label', 'Не той товар'); b.dataset.tip = 'Не той товар — прибрати';
   let armed = false, tmr = null;
   b.onclick = () => {
-    if (!armed) { armed = true; b.textContent = 'Прибрати?'; b.classList.add('on'); tmr = setTimeout(() => { armed = false; b.textContent = '✕'; b.classList.remove('on'); }, 4000); return; }
+    if (!armed) { armed = true; b.textContent = 'Не той товар — прибрати?'; b.classList.add('on'); tmr = setTimeout(() => { armed = false; b.textContent = '✕'; b.classList.remove('on'); }, 4000); return; }
     clearTimeout(tmr); b.disabled = true; b.textContent = '…';
     api('mkreject', { code: P.code, url: s.u, dom: s.d, seller: s.s || '' }).then(r => {
       if (r.error) { b.disabled = false; b.textContent = '✕'; b.classList.remove('on'); armed = false; return alertMsg(r.error); }
