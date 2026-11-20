@@ -48,7 +48,14 @@ a{color:var(--accent)}.empty{color:var(--mute);padding:24px;text-align:center}
 .closed h1{margin-bottom:10px}.closed p{color:var(--mute);margin:0 0 20px}
 @media(max-width:600px){.shop>button{grid-template-columns:1fr auto}.cnt{display:none}.mgrbox{margin-left:0;width:100%}.mgrin{flex:1;width:auto}
   #fq{order:-1;flex:1 1 100%;min-width:0;box-sizing:border-box}.filters select{flex:1 1 40%;min-width:0}}
+.topnav{display:inline-flex;gap:4px;padding:4px;background:#fff;border:1px solid var(--line);border-radius:12px;margin:0 0 18px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.topnav a{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:9px;color:var(--mute);text-decoration:none;font-size:14px;font-weight:600;white-space:nowrap}
+.topnav a:hover{background:var(--bg);color:var(--ink)}.topnav a.on{background:var(--ink);color:#fff}
+.topnav svg{width:16px;height:16px;flex:none}
+@media(max-width:600px){.topnav{display:flex}.topnav a{flex:1;justify-content:center;padding:8px 6px;font-size:13px}}
 </style></head><body><div class="wrap">
+<nav class="topnav" id="topnav"><a href="/rrc/" data-p="rrc" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4.5v5c0 4.7-3.8 8.3-9 9.5-5.2-1.2-9-4.8-9-9.5v-5z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Порушення РРЦ</a><a href="/rynok/" data-p="rynok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg>Ціни ринку</a></nav>
+<script>(function(){var k=new URLSearchParams(location.search).get('k');if(!k)return;document.querySelectorAll('#topnav a').forEach(function(a){a.href=a.getAttribute('href')+'?k='+encodeURIComponent(k);});})();</script>
 <div class="promo" id="promo" style="display:none"><div class="pt"><b>Безкоштовний доступ до звіту діє до 20:00 (за Києвом) 18 листопада.</b> Залишилось: <span class="tm" id="tm"></span><br>
 <span class="sub">Збережіть поточний стан порушень РРЦ або оформіть підписку, щоб звіт оновлювався щодня.</span></div>
 <div class="pa"><button class="bp" id="pdl">Завантажити звіт в Excel</button><a class="bp ghost" id="psub" href="#">Оформити підписку</a></div></div>
